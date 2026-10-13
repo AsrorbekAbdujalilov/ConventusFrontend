@@ -1,111 +1,369 @@
+/* ==========================================================================
+   Conventus Design System — Based on UI/UX Guidelines (UI.md)
+   ========================================================================== */
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  --f-body: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --f-display: 'Outfit', 'Cabinet Grotesk', system-ui, -apple-system, sans-serif;
+  --f-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  /* Palette 1: Warm Campus (default) */
+  --bg: #FFFFFF;
+  --surface: #F6F7FB;
+  --card: #FFFFFF;
+  --text: #111827;
+  --muted: #5B6472;
+  --border: #E5E7EB;
+  --primary: #4F46E5;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #EEF2FF;
+  --secondary: #F97316;
+  --on-secondary: #2A1100;
+  --accent: #FEF3C7;
+  --accent-ink: #78350F;
+  --ok: #059669;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.06);
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+/* Palette 2: Midnight Focus (dark) */
+:root[data-palette="midnight"] {
+  --bg: #0F172A;
+  --surface: #1E293B;
+  --card: #1E293B;
+  --text: #F8FAFC;
+  --muted: #A5B1C5;
+  --border: #334155;
+  --primary: #6366F1;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #27305A;
+  --secondary: #FB923C;
+  --on-secondary: #2A1100;
+  --accent: #3B2F12;
+  --accent-ink: #FDE68A;
+  --ok: #10B981;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+/* Palette 3: Emerald Growth */
+:root[data-palette="emerald"] {
+  --bg: #FFFFFF;
+  --surface: #F0FDF4;
+  --card: #FFFFFF;
+  --text: #064E3B;
+  --muted: #4B6B5E;
+  --border: #D1E7DB;
+  --primary: #059669;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #DCFCE7;
+  --secondary: #10B981;
+  --on-secondary: #022C22;
+  --accent: #FEF9C3;
+  --accent-ink: #713F12;
+  --ok: #059669;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.06);
+  color-scheme: light;
+}
+
+/* Palette 4: Soft Pastel */
+:root[data-palette="pastel"] {
+  --bg: #FFFFFF;
+  --surface: #FAF5FF;
+  --card: #FFFFFF;
+  --text: #2E1065;
+  --muted: #6B5A8E;
+  --border: #E9DDF7;
+  --primary: #7C3AED;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #EDE9FE;
+  --secondary: #EC4899;
+  --on-secondary: #2E1065;
+  --accent: #E0E7FF;
+  --accent-ink: #312E81;
+  --ok: #059669;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.06);
+  color-scheme: light;
+}
+
+/* Palette 5: Academic Navy */
+:root[data-palette="navy"] {
+  --bg: #FFFFFF;
+  --surface: #F1F5F9;
+  --card: #FFFFFF;
+  --text: #0F172A;
+  --muted: #52607A;
+  --border: #DDE3EC;
+  --primary: #1E3A8A;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #E0E7FF;
+  --secondary: #2563EB;
+  --on-secondary: #FFFFFF;
+  --accent: #FEF3C7;
+  --accent-ink: #78350F;
+  --ok: #059669;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.06);
+  color-scheme: light;
+}
+
+/* Palette 6: Sunset Productivity */
+:root[data-palette="sunset"] {
+  --bg: #FFFFFF;
+  --surface: #FFF7ED;
+  --card: #FFFFFF;
+  --text: #451A03;
+  --muted: #7A5A44;
+  --border: #F3DFCB;
+  --primary: #EA580C;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #FFEDD5;
+  --secondary: #D97706;
+  --on-secondary: #FFFFFF;
+  --accent: #FED7AA;
+  --accent-ink: #7C2D12;
+  --ok: #059669;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.06);
+  color-scheme: light;
+}
+
+/* Palette 7: Ocean Calm */
+:root[data-palette="ocean"] {
+  --bg: #FFFFFF;
+  --surface: #F0F9FF;
+  --card: #FFFFFF;
+  --text: #0C4A6E;
+  --muted: #4C6B82;
+  --border: #D3E6F2;
+  --primary: #0284C7;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #E0F2FE;
+  --secondary: #0D9488;
+  --on-secondary: #042F2E;
+  --accent: #BAE6FD;
+  --accent-ink: #0C4A6E;
+  --ok: #059669;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.06);
+  color-scheme: light;
+}
+
+/* Palette 8: Cyber Student (dark) */
+:root[data-palette="cyber"] {
+  --bg: #18181B;
+  --surface: #27272A;
+  --card: #27272A;
+  --text: #FAFAFA;
+  --muted: #A1A1AA;
+  --border: #3F3F46;
+  --primary: #8B5CF6;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #2E2650;
+  --secondary: #06B6D4;
+  --on-secondary: #042F2E;
+  --accent: #F43F5E;
+  --accent-ink: #FFFFFF;
+  --ok: #10B981;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+
+/* Palette 9: Paper & Ink */
+:root[data-palette="paper"] {
+  --bg: #FFFFFF;
+  --surface: #FAF9F6;
+  --card: #FFFFFF;
+  --text: #09090B;
+  --muted: #52525B;
+  --border: #E4E4E7;
+  --primary: #18181B;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #F4F4F5;
+  --secondary: #71717A;
+  --on-secondary: #FFFFFF;
+  --accent: #E4E4E7;
+  --accent-ink: #18181B;
+  --ok: #059669;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.06);
+  color-scheme: light;
+}
+
+/* Palette 10: Mint & Coral */
+:root[data-palette="mint"] {
+  --bg: #FFFFFF;
+  --surface: #F0FDFA;
+  --card: #FFFFFF;
+  --text: #134E4A;
+  --muted: #4A6E6A;
+  --border: #D3EBE7;
+  --primary: #0D9488;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #CCFBF1;
+  --secondary: #F43F5E;
+  --on-secondary: #4C0519;
+  --accent: #FFE4E6;
+  --accent-ink: #881337;
+  --ok: #0D9488;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.06);
+  color-scheme: light;
+}
+
+/* Base resets & typography */
+* {
   box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 1rem/1.6 var(--f-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
+
+:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 8px;
 }
-p {
+
+h1, h2, h3, h4, h5 {
+  font-family: var(--f-display);
+  text-wrap: balance;
   margin: 0;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+.wrap {
+  max-width: 80rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+@media (min-width: 640px) {
+  .wrap {
+    padding-inline: 1.5rem;
+  }
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  padding: 0.55rem 1rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  background: none;
+  transition: background 0.15s, border-color 0.15s, filter 0.15s, color 0.15s;
+}
+
+.btn.primary {
+  background: var(--primary);
+  color: var(--primary-ink);
+}
+
+.btn.primary:hover {
+  filter: brightness(1.08);
+}
+
+.btn.ghost {
+  color: var(--text);
+}
+
+.btn.ghost:hover {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.btn.line {
+  border-color: var(--border);
+  background: var(--card);
+  color: var(--text);
+}
+
+.btn.line:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn.orange {
+  background: var(--secondary);
+  color: var(--on-secondary);
+}
+
+.btn.orange:hover {
+  filter: brightness(1.08);
+}
+
+/* Flashcard 3D scene */
+.fc-scene {
+  perspective: 1100px;
+  max-width: 28rem;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.fc {
+  position: relative;
+  aspect-ratio: 3/2;
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+}
+
+.fc.flip {
+  transform: rotateY(180deg);
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: 1rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.face.back {
+  transform: rotateY(180deg);
+  background: var(--primary);
+  color: var(--primary-ink);
+  border-color: var(--primary);
+}
+
+/* Media reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 }

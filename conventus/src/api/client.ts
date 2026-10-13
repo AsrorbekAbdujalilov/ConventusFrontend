@@ -1,9 +1,7 @@
+import { APP_CONFIG } from '../config'
+
 export const getApiBaseUrl = (): string => {
-  const envUrl = import.meta.env.VITE_API_BASE_URL
-  if (envUrl && typeof envUrl === 'string') {
-    return envUrl.replace(/\/$/, '')
-  }
-  return ''
+  return APP_CONFIG.apiBaseUrl.replace(/\/$/, '')
 }
 
 export class ApiError extends Error {
