@@ -16,6 +16,8 @@ export interface UserProfile {
   id: number;
   username: string;
   email: string;
+  first_name?: string;
+  last_name?: string;
   age?: number | null;
   bio?: string;
   place_of_work_or_education?: string;
@@ -28,6 +30,8 @@ export interface RegisterPayload {
   username: string;
   email?: string;
   password: string;
+  name?: string;
+  role?: string;
   age?: number;
   bio?: string;
   place_of_work_or_education?: string;

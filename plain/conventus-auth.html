@@ -390,30 +390,136 @@ $('#r-pw').addEventListener('input',e=>{
   $('#r-pw-h').textContent=['Use 8 or more characters with letters and numbers.','Weak. Add more characters.','Fair. Mix upper and lower case.','Good. A symbol or more length makes it strong.','Strong password.'][s];
 });
 
-fL.addEventListener('submit',e=>{
-  e.preventDefault();
-  const id=$('#l-id').value.trim(),pw=$('#l-pw').value;
-  const ok=[setErr('l-id',id?'':'Enter your email or username.'),setErr('l-pw',pw?'':'Enter your password.')].every(Boolean);
-  const n=$('#l-note');
-  if(!ok){n.hidden=true;(document.querySelector('#formLogin [aria-invalid="true"]')||{focus(){}}).focus();return}
-  n.hidden=false;n.textContent='Details look good. This is an example page, so no sign-in happened.';
+const API_BASE = (location.origin.includes(':5173') || location.origin.includes(':3000')) ? '' : 'http://127.0.0.1:8000';
+
+async function checkAuthStatus() {
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/status/`, { credentials: 'include' });
+    const data = await res.json();
+    if (data.authenticated && data.user) {
+      authed = true;
+      const u = data.user;
+      USER.name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username;
+      USER.handle = '@' + u.username;
+      renderAuth();
+    }
+  } catch (err) {
+    console.warn('Backend not reached on load:', err);
+  }
+}
+
+async function handleLogout() {
+  try {
+    await fetch(`${API_BASE}/api/auth/logout/`, { method: 'POST', credentials: 'include' });
+  } finally {
+    authed = false;
+    renderAuth();
+  }
+}
+
+document.addEventListener('click', e => {
+  if (e.target.closest('a[href="#logout"]')) {
+    e.preventDefault();
+    handleLogout();
+  }
 });
-fR.addEventListener('submit',e=>{
+
+fL.addEventListener('submit', async e => {
   e.preventDefault();
-  const name=$('#r-name').value.trim(),u=$('#r-user').value.trim().replace(/^@/,''),em=$('#r-email').value.trim(),pw=$('#r-pw').value;
-  const res=[
-    setErr('r-name',name.length>=2?'':'Enter your full name.'),
-    setErr('r-user',/^[A-Za-z0-9_]{3,20}$/.test(u)?'':'Use 3 to 20 letters, numbers or underscores.'),
-    setErr('r-email',mail(em)?'':'Enter a valid email address.'),
-    setErr('r-pw',pw.length>=8&&/\d/.test(pw)&&/[A-Za-z]/.test(pw)?'':'Use at least 8 characters with letters and numbers.'),
-    setErr('r-terms',$('#r-terms').checked?'':'Agree to the Terms to continue.')
+  const id = $('#l-id').value.trim(), pw = $('#l-pw').value;
+  const ok = [setErr('l-id', id ? '' : 'Enter your email or username.'), setErr('l-pw', pw ? '' : 'Enter your password.')].every(Boolean);
+  const n = $('#l-note');
+  if (!ok) { n.hidden = true; (document.querySelector('#formLogin [aria-invalid="true"]') || { focus() {} }).focus(); return; }
+
+  n.hidden = false;
+  n.textContent = 'Logging in...';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/login/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ username: id, password: pw })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const msg = data.detail || data.non_field_errors?.[0] || data.username?.[0] || 'Invalid credentials.';
+      n.textContent = msg;
+      return;
+    }
+
+    authed = true;
+    if (data.user) {
+      USER.name = [data.user.first_name, data.user.last_name].filter(Boolean).join(' ') || data.user.username;
+      USER.handle = '@' + data.user.username;
+    }
+    renderAuth();
+    n.textContent = 'Login successful! Welcome back to Conventus.';
+  } catch (err) {
+    n.textContent = 'Connection error. Make sure backend is running on http://127.0.0.1:8000';
+  }
+});
+
+fR.addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = $('#r-name').value.trim(), u = $('#r-user').value.trim().replace(/^@/, ''), em = $('#r-email').value.trim(), pw = $('#r-pw').value;
+  const role = $('input[name="role"]:checked')?.value || 'student';
+  const res = [
+    setErr('r-name', name.length >= 2 ? '' : 'Enter your full name.'),
+    setErr('r-user', /^[A-Za-z0-9_]{3,20}$/.test(u) ? '' : 'Use 3 to 20 letters, numbers or underscores.'),
+    setErr('r-email', mail(em) ? '' : 'Enter a valid email address.'),
+    setErr('r-pw', pw.length >= 8 && /\d/.test(pw) && /[A-Za-z]/.test(pw) ? '' : 'Use at least 8 characters with letters and numbers.'),
+    setErr('r-terms', $('#r-terms').checked ? '' : 'Agree to the Terms to continue.')
   ];
-  const n=$('#r-note');
-  if(!res.every(Boolean)){n.hidden=true;(document.querySelector('#formRegister [aria-invalid="true"]')||$('#r-terms')).focus();return}
-  n.hidden=false;n.textContent=`Details look good, @${u}. This is an example page, so no account was created.`;
+  const n = $('#r-note');
+  if (!res.every(Boolean)) { n.hidden = true; (document.querySelector('#formRegister [aria-invalid="true"]') || $('#r-terms')).focus(); return; }
+
+  n.hidden = false;
+  n.textContent = 'Creating your account...';
+
+  try {
+    const regRes = await fetch(`${API_BASE}/api/auth/register/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        username: u,
+        email: em,
+        password: pw,
+        name: name,
+        role: role
+      })
+    });
+    const regData = await regRes.json();
+    if (!regRes.ok) {
+      const errTxt = regData.username?.[0] || regData.email?.[0] || regData.detail || 'Registration failed.';
+      n.textContent = errTxt;
+      return;
+    }
+
+    // Auto-login upon registration
+    const loginRes = await fetch(`${API_BASE}/api/auth/login/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ username: u, password: pw })
+    });
+    const loginData = await loginRes.json();
+
+    authed = true;
+    USER.name = name || u;
+    USER.handle = '@' + u;
+    renderAuth();
+    n.textContent = `Account created successfully! Welcome to Conventus, @${u}.`;
+  } catch (err) {
+    n.textContent = 'Connection error. Make sure backend is running on http://127.0.0.1:8000';
+  }
 });
-['l-id','l-pw','r-name','r-user','r-email','r-pw'].forEach(id=>document.getElementById(id).addEventListener('input',()=>setErr(id,'')));
-$$('[data-sso]').forEach(b=>b.addEventListener('click',()=>{const n=b.closest('form').querySelector('.note');n.hidden=false;n.textContent='Google sign-in is not connected in this example page.'}));
+
+['l-id', 'l-pw', 'r-name', 'r-user', 'r-email', 'r-pw'].forEach(id => document.getElementById(id).addEventListener('input', () => setErr(id, '')));
+$$('[data-sso]').forEach(b => b.addEventListener('click', () => { const n = b.closest('form').querySelector('.note'); n.hidden = false; n.textContent = 'Google sign-in is coming soon.' }));
+
+checkAuthStatus();
 </script>
 
 </html>
