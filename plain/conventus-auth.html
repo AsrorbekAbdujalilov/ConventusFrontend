@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Conventus Sign In</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: sticky navbar with hover dropdowns (drawer on mobile), hero with flashcard, six study areas, co-creator card, votes. White base, colour from the selected palette; flat surfaces, no glow. Palettes are switched with data-palette on the root element. */
+:root{--f-body:'Inter','Plus Jakarta Sans',system-ui,sans-serif;--f-display:'Outfit','Cabinet Grotesk',system-ui,sans-serif;--f-mono:'JetBrains Mono','Fira Code',ui-monospace,monospace}
+:root{--bg:#FFFFFF;--surface:#F6F7FB;--card:#FFFFFF;--text:#111827;--muted:#5B6472;--border:#E5E7EB;--primary:#4F46E5;--primary-ink:#FFFFFF;--primary-soft:#EEF2FF;--secondary:#F97316;--on-secondary:#2A1100;--accent:#FEF3C7;--accent-ink:#78350F;--ok:#059669;--shadow:0 1px 2px rgba(15,23,42,.05),0 8px 20px rgba(15,23,42,.06)}
+
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--text);font:400 1rem/1.6 var(--f-body)}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--primary);outline-offset:2px;border-radius:8px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0}
+.wrap{max-width:80rem;margin-inline:auto;padding-inline:1rem}
+@media(min-width:640px){.wrap{padding-inline:1.5rem}}
+
+/* ---------- Navbar ---------- */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:var(--bg);border-bottom:1px solid var(--border)}
+.nav-in{display:flex;align-items:center;gap:.5rem;height:4rem}
+.logo{display:flex;align-items:center;gap:.6rem;font:700 1.25rem var(--f-display);margin-right:.75rem}
+.logo i{display:grid;place-items:center;width:2rem;height:2rem;border-radius:.75rem;background:var(--primary);color:var(--primary-ink)}
+.menu{display:none;list-style:none;margin:0;padding:0;gap:.1rem;align-items:center}
+.item{position:relative}
+.trigger{display:flex;align-items:center;gap:.3rem;border:0;background:none;padding:.5rem .7rem;border-radius:.75rem;font-weight:500;font-size:.9375rem;white-space:nowrap}
+.trigger svg{width:.8rem;height:.8rem;transition:transform .2s}
+.trigger:hover,.item.open .trigger{background:var(--primary-soft);color:var(--primary)}
+.item.open .trigger svg{transform:rotate(180deg)}
+.panel{position:absolute;left:0;top:100%;min-width:17rem;padding:.5rem;margin-top:.35rem;background:var(--card);border:1px solid var(--border);border-radius:1.25rem;box-shadow:var(--shadow);opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .15s,transform .15s,visibility .15s}
+.panel::before{content:"";position:absolute;inset:-.5rem 0 100% 0;height:.5rem}
+.item.open .panel{opacity:1;visibility:visible;transform:none}
+.panel a{display:block;padding:.6rem .75rem;border-radius:.75rem}
+.panel a:hover,.panel a:focus-visible{background:var(--primary-soft)}
+.panel b{display:block;font-weight:600;font-size:.9375rem}
+.panel small{display:block;color:var(--muted);font-size:.8125rem;line-height:1.35}
+.right{margin-left:auto;display:flex;align-items:center;gap:.5rem}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;border:1px solid transparent;border-radius:.75rem;padding:.55rem 1rem;font-weight:600;font-size:.9375rem;background:none}
+.btn.primary{background:var(--primary);color:var(--primary-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost:hover{background:var(--primary-soft);color:var(--primary)}
+.btn.line{border-color:var(--border);background:var(--card)}
+.btn.line:hover{border-color:var(--primary);color:var(--primary)}
+.btn.orange{background:var(--secondary);color:var(--on-secondary)}
+.profile{display:flex;align-items:center;gap:.5rem;border:1px solid var(--border);background:var(--card);border-radius:999px;padding:.25rem .7rem .25rem .25rem}
+.avatar{display:grid;place-items:center;width:2rem;height:2rem;border-radius:50%;background:var(--secondary);color:var(--on-secondary);font:600 .875rem var(--f-display)}
+.profile .name{display:none;font-weight:500;font-size:.9375rem}
+.item.user .panel{left:auto;right:0;min-width:15rem}
+.panel hr{border:0;border-top:1px solid var(--border);margin:.4rem .25rem}
+.streak{font:500 .8125rem var(--f-mono);color:var(--accent-ink);background:var(--accent);border-radius:999px;padding:.15rem .6rem;display:inline-block;margin:.3rem .75rem .4rem}
+.burger{display:grid;place-items:center;width:2.5rem;height:2.5rem;border:1px solid var(--border);background:var(--card);border-radius:.75rem}
+.auth-desktop{display:none}
+
+.drawer{display:none;border-top:1px solid var(--border);background:var(--bg);max-height:calc(100dvh - 4rem);overflow:auto;padding-block:.5rem 1rem}
+.drawer.on{display:block}
+.drawer details{border-bottom:1px solid var(--border)}
+.drawer summary{list-style:none;display:flex;justify-content:space-between;align-items:center;padding:.9rem .25rem;font-weight:600;cursor:pointer}
+.drawer summary::-webkit-details-marker{display:none}
+.drawer summary::after{content:"+";font:500 1.25rem var(--f-mono);color:var(--muted)}
+.drawer details[open] summary::after{content:"\2212"}
+.drawer details a{display:block;padding:.55rem 1rem;border-radius:.75rem;color:var(--muted)}
+.drawer details a:hover{background:var(--primary-soft);color:var(--primary)}
+.drawer .auth{display:flex;gap:.5rem;padding-top:1rem}
+.drawer .auth .btn{flex:1}
+
+@media(min-width:68rem){
+  .menu{display:flex}.burger,.drawer{display:none!important}
+  .auth-desktop{display:inline-flex}.profile .name{display:inline}
+}
+
+/* ---------- Page ---------- */
+.hero{padding-block:3rem 2.5rem;display:grid;gap:2.5rem;align-items:center}
+@media(min-width:60rem){.hero{grid-template-columns:1.1fr .9fr;padding-block:4.5rem 3.5rem}}
+.eyebrow{display:inline-flex;gap:.5rem;align-items:center;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:.25rem .8rem;font-size:.875rem;font-weight:500}
+.hero h1{font-size:clamp(2.25rem,6vw,3.5rem);font-weight:700;line-height:1.08;margin-block:1rem}
+.hero h1 em{font-style:normal;color:var(--primary)}
+.hero p{color:var(--muted);font-size:1.125rem;max-width:34rem;margin:0 0 1.5rem}
+.cta{display:flex;flex-wrap:wrap;gap:.75rem}
+.cta .btn{padding:.8rem 1.4rem}
+
+.fc-scene{perspective:1100px;max-width:28rem;width:100%;margin-inline:auto}
+.fc{position:relative;aspect-ratio:3/2;width:100%;transform-style:preserve-3d;transition:transform .3s;cursor:pointer;border:0;background:none;padding:0;text-align:left}
+.fc.flip{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;border-radius:1rem;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);padding:1.5rem;display:flex;flex-direction:column;justify-content:space-between}
+.face.back{transform:rotateY(180deg);background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.tag{font:500 .75rem var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.face.back .tag{color:var(--primary-ink);opacity:.8}
+.face .q{font:600 1.5rem/1.25 var(--f-display)}
+.hint{font-size:.875rem;color:var(--muted)}
+.rate{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-top:1rem}
+.rate button{border:1px solid var(--border);background:var(--card);border-radius:.75rem;padding:.7rem .25rem;font-weight:600;font-size:.9375rem;display:flex;gap:.4rem;align-items:center;justify-content:center}
+.rate button:hover{border-color:var(--primary)}
+.dot{width:.65rem;height:.65rem;border-radius:50%}
+.rate-note{margin:.6rem 0 0;font-size:.875rem;color:var(--muted);min-height:1.4em;text-align:center}
+
+section.block{padding-block:2.5rem}
+.head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:.75rem 1.5rem;margin-bottom:1.5rem}
+.head h2{font-size:1.5rem;font-weight:600}
+.head p{margin:.25rem 0 0;color:var(--muted)}
+.areas{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(min(100%,19rem),1fr))}
+.area{background:var(--card);border:1px solid var(--border);border-radius:1rem;padding:1.25rem;display:flex;flex-direction:column;gap:.75rem;min-width:0;transition:border-color .15s,transform .15s}
+.area:hover{border-color:var(--primary)}
+.area h3{font-size:1.25rem;font-weight:500}
+.area p{margin:0;color:var(--muted);font-size:.9375rem}
+.chips{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:auto}
+.chip{font-size:.8125rem;font-weight:500;background:var(--surface);border-radius:999px;padding:.2rem .65rem;color:var(--muted)}
+.mark{width:2.5rem;height:2.5rem;border-radius:.75rem;display:grid;place-items:center;font:600 1rem var(--f-display)}
+.m1{background:var(--primary);color:var(--primary-ink)}.m2{background:var(--accent);color:var(--accent-ink)}
+.m3{background:var(--ok);color:#fff}.m4{background:var(--secondary);color:var(--on-secondary)}
+
+.shout{border:1px dashed var(--primary);border-radius:1rem;padding:1.25rem;background:var(--primary-soft);display:grid;gap:.75rem}
+.shout p{margin:0;font-size:1.0625rem}
+.pill{display:inline-block;background:var(--primary-soft);color:var(--primary);font:500 .875rem var(--f-mono);padding:.1rem .6rem;border-radius:999px}
+.votes{display:grid;gap:.75rem}
+.vote{display:grid;grid-template-columns:auto 1fr auto;gap:1rem;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:1rem;padding:1rem}
+.up{display:flex;flex-direction:column;align-items:center;min-width:3.25rem;border:1px solid var(--border);background:var(--bg);border-radius:.75rem;padding:.4rem .5rem;font:500 .9375rem var(--f-mono);font-variant-numeric:tabular-nums}
+.up[aria-pressed="true"]{border-color:var(--primary);background:var(--primary-soft);color:var(--primary)}
+.vote h3{font-size:1.0625rem;font-weight:500}.vote small{color:var(--muted)}
+.badge{font-size:.8125rem;font-weight:600;border-radius:999px;padding:.2rem .7rem;white-space:nowrap}
+.b-review{background:#FEF3C7;color:#78350F}.b-prog{background:#E0E7FF;color:#3730A3}.b-live{background:#D1FAE5;color:#065F46}
+@media(max-width:34rem){.vote{grid-template-columns:auto 1fr}.vote .badge{grid-column:2;justify-self:start}}
+.two{display:grid;gap:1.5rem}@media(min-width:60rem){.two{grid-template-columns:1fr 1.2fr}}
+
+footer{border-top:1px solid var(--border);margin-top:2rem;padding-block:1.5rem;color:var(--muted);font-size:.875rem}
+footer .wrap{display:flex;flex-wrap:wrap;gap:.75rem 1.5rem;justify-content:space-between;align-items:center}
+.demo{display:flex;align-items:center;gap:.5rem}
+.sw{width:2.5rem;height:1.4rem;border-radius:999px;border:1px solid var(--border);background:var(--surface);position:relative}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:1rem;height:1rem;border-radius:50%;background:var(--muted);transition:transform .2s}
+.sw[aria-checked="true"]{background:var(--primary)}.sw[aria-checked="true"]::after{transform:translateX(1.05rem);background:#fff}
+.panel button.opt{display:flex;align-items:center;gap:.7rem;width:100%;border:0;background:none;text-align:left;padding:.5rem .75rem;border-radius:.75rem}
+.panel button.opt:hover,.panel button.opt[aria-checked="true"]{background:var(--primary-soft)}
+.sws{display:flex}.sws i{width:1rem;height:1rem;border-radius:50%;border:2px solid var(--card);margin-left:-.3rem}.sws i:first-child{margin-left:0}
+.themebtn{border:1px solid var(--border);background:var(--card)}
+.panel.pal{min-width:15rem}
+@media(max-width:40rem){.tl{display:none}.nav-in{gap:.25rem}.right{gap:.25rem}.right .btn{padding:.5rem .6rem}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+:root{--danger:#B91C1C}
+.auth-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:1.5rem;padding-block:2rem 3rem;align-items:stretch}
+@media(min-width:60rem){.auth-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);padding-block:3rem 4rem}}
+.auth-side{background:var(--primary);color:var(--primary-ink);border-radius:1.5rem;padding:2rem;display:flex;flex-direction:column;gap:1rem;min-width:0}
+@media(min-width:40rem){.auth-side{padding:2.5rem}}
+.eyebrow-w{align-self:flex-start;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:.25rem .8rem;font-size:.875rem;font-weight:500}
+.auth-side h1{font-size:clamp(2rem,5vw,2.75rem);font-weight:700;line-height:1.1}
+.auth-side>p{margin:0;opacity:.9;font-size:1.0625rem;max-width:30rem}
+.points{list-style:none;margin:.5rem 0 0;padding:0;display:grid;gap:.75rem}
+.points li{display:grid;gap:.1rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:1rem;padding:.8rem 1rem}
+.points b{font:500 1.0625rem var(--f-display)}.points span{font-size:.9375rem;opacity:.88}
+.auth-side .credit{margin-top:auto;font-size:.9375rem;opacity:.9}
+.pill-w{display:inline-block;background:var(--primary-soft);color:var(--primary);font:500 .875rem var(--f-mono);padding:.05rem .55rem;border-radius:999px}
+.auth-card{background:var(--card);border:1px solid var(--border);border-radius:1.5rem;padding:1.25rem;display:flex;flex-direction:column;gap:1.25rem;min-width:0}
+@media(min-width:40rem){.auth-card{padding:2rem}}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:.25rem;background:var(--surface);border-radius:.9rem;padding:.25rem}
+.seg button{border:0;background:none;border-radius:.7rem;padding:.6rem;font-weight:600;color:var(--muted)}
+.seg button[aria-selected="true"]{background:var(--card);color:var(--primary);box-shadow:0 1px 2px rgba(15,23,42,.08)}
+.form{display:flex;flex-direction:column;gap:1rem}
+.form h2{font-size:1.5rem;font-weight:600}.sub{margin:.2rem 0 0;color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:.35rem;min-width:0}
+.field label,.role legend{font-weight:500;font-size:.9375rem}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem}
+.inp{width:100%;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:.75rem;padding:.7rem .85rem;font:inherit}
+.inp::placeholder{color:#8A93A3}
+.inp:hover{border-color:#C7CCD6}
+.inp:focus{outline:0;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.inp[aria-invalid="true"]{border-color:var(--danger)}
+.pw{position:relative}.pw .inp{padding-right:4.5rem}
+.show{position:absolute;right:.4rem;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--primary);font-weight:600;font-size:.875rem;padding:.4rem .6rem;border-radius:.5rem}
+.show:hover{background:var(--primary-soft)}
+.at{display:flex;align-items:center;border:1px solid var(--border);background:var(--bg);border-radius:.75rem}
+.at:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.at span{padding-left:.85rem;color:var(--muted);font-family:var(--f-mono)}
+.at .inp{border:0;box-shadow:none;background:none;padding-left:.2rem}
+.at .inp:focus{box-shadow:none}
+.err{color:var(--danger);font-size:.8125rem;min-height:0}
+.err:empty{display:none}
+.hintl{color:var(--muted);font-size:.8125rem}
+.meter{display:grid;grid-template-columns:repeat(4,1fr);gap:.3rem;margin-top:.25rem}
+.meter i{height:.3rem;border-radius:999px;background:var(--border)}
+.meter[data-s="1"] i:nth-child(-n+1){background:#EF4444}
+.meter[data-s="2"] i:nth-child(-n+2){background:var(--secondary)}
+.meter[data-s="3"] i:nth-child(-n+3){background:#EAB308}
+.meter[data-s="4"] i{background:var(--ok)}
+.two-f{display:grid;gap:1rem}@media(min-width:34rem){.two-f{grid-template-columns:1fr 1fr}}
+.role{border:0;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.role legend{grid-column:1/-1;padding:0;margin-bottom:.35rem}
+.role label{position:relative;display:block}
+.role input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.role span{display:block;text-align:center;border:1px solid var(--border);border-radius:.75rem;padding:.65rem;font-weight:500}
+.role input:checked+span{border-color:var(--primary);background:var(--primary-soft);color:var(--primary);font-weight:600}
+.role input:focus-visible+span{outline:3px solid var(--primary);outline-offset:2px}
+.check{display:flex;gap:.6rem;align-items:flex-start;font-size:.9375rem;color:var(--muted)}
+.check input{width:1.1rem;height:1.1rem;margin-top:.2rem;accent-color:var(--primary)}
+.link{color:var(--primary);font-weight:600;font-size:.9375rem}.link:hover{text-decoration:underline}
+.btn.big{padding:.8rem 1.25rem;width:100%}
+.or{display:flex;align-items:center;gap:.75rem;color:var(--muted);font-size:.875rem}
+.or::before,.or::after{content:"";flex:1;border-top:1px solid var(--border)}
+.switch{margin:0;text-align:center;color:var(--muted);font-size:.9375rem}
+.note{margin:0;padding:.75rem 1rem;border-radius:.75rem;background:var(--accent);color:var(--accent-ink);font-size:.9375rem}
+</style>
+
+<header class="nav">
+  <div class="wrap">
+    <div class="nav-in">
+      <a class="logo" href="#top" aria-label="Conventus home">
+        <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-4 9 4-9 4-9-4z"/><path d="M7 10.5V15c0 1.5 2.2 3 5 3s5-1.500 5-3v-4.500"/></svg></i>Conventus
+      </a>
+      <ul class="menu" id="menu"></ul>
+      <div class="right">
+        <div id="authSlot" style="display:flex;gap:.5rem;align-items:center"></div>
+        <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="drawer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <nav class="drawer" id="drawer" aria-label="Mobile"><div class="wrap" id="drawerIn"></div></nav>
+</header>
+
+<main id="top">
+  <div class="wrap">
+    <div class="auth-grid">
+      <aside class="auth-side" aria-label="Why join Conventus">
+        <span class="eyebrow-w">Welcome to Conventus</span>
+        <h1 id="sideTitle">Welcome back.</h1>
+        <p id="sideText">Pick up where you left off: your notes, your classrooms and your review streak are waiting.</p>
+        <ul class="points">
+          <li><b>Classrooms</b><span>Join with a code or open your own.</span></li>
+          <li><b>Notes and flashcards</b><span>Write once, review on a schedule.</span></li>
+          <li><b>Games and assessments</b><span>Quiz your group, then check the results.</span></li>
+        </ul>
+        <p class="credit">Many features here started as <span class="pill-w">@Malika_S</span> and other students' ideas.</p>
+      </aside>
+
+      <section class="auth-card" aria-labelledby="formTitle">
+        <div class="seg" role="tablist" aria-label="Account">
+          <button role="tab" id="tabLogin" aria-selected="true" aria-controls="formLogin">Log in</button>
+          <button role="tab" id="tabRegister" aria-selected="false" aria-controls="formRegister">Register</button>
+        </div>
+
+        <form id="formLogin" class="form" novalidate role="tabpanel" aria-labelledby="tabLogin">
+          <div><h2 id="formTitle">Log in to Conventus</h2><p class="sub">Use your email or your @username.</p></div>
+          <div class="field"><label for="l-id">Email or username</label><input class="inp" id="l-id" name="id" autocomplete="username" placeholder="aziza@school.edu"><span class="err" id="l-id-e" aria-live="polite"></span></div>
+          <div class="field"><div class="row"><label for="l-pw">Password</label><a class="link" href="#forgot" id="forgot">Forgot password?</a></div>
+            <div class="pw"><input class="inp" id="l-pw" name="password" type="password" autocomplete="current-password" placeholder="Your password"><button type="button" class="show" data-for="l-pw" aria-label="Show password">Show</button></div><span class="err" id="l-pw-e" aria-live="polite"></span></div>
+          <label class="check"><input type="checkbox" id="l-rem" checked><span>Keep me signed in on this device</span></label>
+          <button class="btn primary big" type="submit">Log in</button>
+          <div class="or"><span>or</span></div>
+          <button class="btn line big" type="button" data-sso>Continue with Google</button>
+          <p class="switch">New to Conventus? <a class="link" href="#register">Create an account</a></p>
+          <p class="note" id="l-note" role="status" aria-live="polite" hidden></p>
+        </form>
+
+        <form id="formRegister" class="form" novalidate role="tabpanel" aria-labelledby="tabRegister" hidden>
+          <div><h2>Create your account</h2><p class="sub">Free for students. Takes under a minute.</p></div>
+          <div class="two-f">
+            <div class="field"><label for="r-name">Full name</label><input class="inp" id="r-name" name="name" autocomplete="name" placeholder="Aziza Karimova"><span class="err" id="r-name-e" aria-live="polite"></span></div>
+            <div class="field"><label for="r-user">Username</label><div class="at"><span>@</span><input class="inp" id="r-user" name="username" autocomplete="username" placeholder="aziza_k"></div><span class="err" id="r-user-e" aria-live="polite"></span></div>
+          </div>
+          <div class="field"><label for="r-email">Email</label><input class="inp" id="r-email" name="email" type="email" autocomplete="email" placeholder="aziza@school.edu"><span class="err" id="r-email-e" aria-live="polite"></span></div>
+          <div class="field"><label for="r-pw">Password</label>
+            <div class="pw"><input class="inp" id="r-pw" name="password" type="password" autocomplete="new-password" placeholder="At least 8 characters"><button type="button" class="show" data-for="r-pw" aria-label="Show password">Show</button></div>
+            <div class="meter" aria-hidden="true"><i></i><i></i><i></i><i></i></div><span class="hintl" id="r-pw-h" aria-live="polite">Use 8 or more characters with letters and numbers.</span><span class="err" id="r-pw-e" aria-live="polite"></span></div>
+          <fieldset class="role"><legend>I am a</legend>
+            <label><input type="radio" name="role" value="student" checked><span>Student</span></label>
+            <label><input type="radio" name="role" value="teacher"><span>Teacher</span></label>
+          </fieldset>
+          <label class="check"><input type="checkbox" id="r-terms"><span>I agree to the <a class="link" href="#terms">Terms</a> and <a class="link" href="#privacy">Privacy Policy</a></span></label><span class="err" id="r-terms-e" aria-live="polite"></span>
+          <button class="btn primary big" type="submit">Create account</button>
+          <div class="or"><span>or</span></div>
+          <button class="btn line big" type="button" data-sso>Sign up with Google</button>
+          <p class="switch">Already have an account? <a class="link" href="#login">Log in</a></p>
+          <p class="note" id="r-note" role="status" aria-live="polite" hidden></p>
+        </form>
+      </section>
+    </div>
+  </div>
+</main>
+<footer><div class="wrap"><span>Conventus · Example sign-in page, no accounts are created</span><span>Need help? Ask your teacher or classroom admin.</span></div></footer>
+
+<script>
+const NAV=[
+ {k:'classroom',t:'Classroom',items:[
+  ['Open classroom','Start a room for your class or study group','#classroom-open'],
+  ['Join classroom','Enter with a code from your teacher','#classroom-join'],
+  ['Discover','Browse public classrooms','#classroom-discover']]},
+ {k:'games',t:'Games',items:[
+  ['Create game','Turn a deck into a live quiz game','#games-create'],
+  ['Join lobby','Jump into a game with a PIN','#games-lobby'],
+  ['Library','Games you and others have made','#games-library']]},
+ {k:'notes',t:'Notes',items:[
+  ['My notes','Everything you have written','#notes-mine'],
+  ['Review','Turn notes into flashcards and recall prompts','#notes-review'],
+  ['Discover','Notes shared by the community','#notes-discover']]},
+ {k:'creator',t:'Assessment creator',items:[
+  ['Create','Build a quiz or exam','#assess-create'],
+  ['My assessments','Drafts and published papers','#assess-mine'],
+  ['Library','Reusable question banks','#assess-library']]},
+ {k:'checker',t:'Assessment checker',items:[
+  ['Check','Upload answers and get feedback','#check'],
+  ['History','Past results and progress','#check-history']]},
+ {k:'prepare',t:'Prepare',items:[
+  ['Direct chat','Ask questions about your material','#prepare-chat'],
+  ['Tests','Practice tests by subject','#prepare-tests'],
+  ['Study plan','A schedule that works back from your exam','#prepare-plan']]},
+ {k:'focus',t:'Focus',items:[
+  ['Focus','Pomodoro timer with your task list','#focus'],
+  ['Deep Focus','Full-screen, nothing else on the page','#focus-deep'],
+  ['Ambient sounds','Rain, cafe and white noise','#focus-sounds']]}
+];
+const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+const $=s=>document.querySelector(s);
+const USER={name:'Aziza Karimova',handle:'@aziza_k',streak:12};
+let authed=false;
+
+function panel(items){return '<div class="panel" role="menu">'+items.map(i=>`<a role="menuitem" href="${i[2]}"><b>${i[0]}</b><small>${i[1]}</small></a>`).join('')+'</div>'}
+function renderMenu(){
+  $('#menu').innerHTML=NAV.map(n=>`<li class="item" data-k="${n.k}"><button class="trigger" aria-haspopup="true" aria-expanded="false">${n.t}${chev}</button>${panel(n.items)}</li>`).join('');
+  $('#drawerIn').innerHTML=NAV.map(n=>`<details><summary>${n.t}</summary>${n.items.map(i=>`<a href="${i[2]}">${i[0]}</a>`).join('')}</details>`).join('')+'<div class="auth" id="drawerAuth"></div>';
+  bindMenus();renderAuth();
+}
+function renderAuth(){
+  const ini=USER.name.split(' ').map(w=>w[0]).join('');
+  if(authed){
+    $('#authSlot').innerHTML=`<div class="item user"><button class="profile trigger" style="padding:.25rem .7rem .25rem .25rem;border:1px solid var(--border)" aria-haspopup="true" aria-expanded="false" aria-label="Account menu"><span class="avatar">${ini}</span><span class="name">${USER.name.split(' ')[0]}</span>${chev}</button>
+      <div class="panel" role="menu"><div style="padding:.5rem .75rem"><b>${USER.name}</b><small>${USER.handle}</small></div><span class="streak">${USER.streak}-day streak</span><hr>
+      <a role="menuitem" href="#profile"><b>Profile</b></a><a role="menuitem" href="#dashboard"><b>My dashboard</b></a><a role="menuitem" href="#settings"><b>Settings</b></a><hr><a role="menuitem" href="#logout"><b>Log out</b></a></div></div>`;
+    $('#drawerAuth').innerHTML=`<a class="btn line" href="#profile">Profile</a><a class="btn ghost" href="#logout">Log out</a>`;
+  }else{
+    $('#authSlot').innerHTML=`<a class="btn ghost" href="#login">Log in</a><a class="btn primary auth-desktop" href="#register">Register</a>`;
+    $('#drawerAuth').innerHTML=`<a class="btn line" href="#login">Log in</a><a class="btn primary" href="#register">Register</a>`;
+  }
+  bindMenus();
+}
+let closeT;
+function closeAll(except){document.querySelectorAll('.item.open').forEach(i=>{if(i!==except){i.classList.remove('open');i.querySelector('.trigger').setAttribute('aria-expanded','false')}})}
+function setOpen(item,on){
+  if(on){closeAll(item)}
+  item.classList.toggle('open',on);item.querySelector('.trigger').setAttribute('aria-expanded',String(on));
+}
+function bindMenus(){
+  document.querySelectorAll('.item').forEach(item=>{
+    if(item.dataset.b)return;item.dataset.b=1;
+    const t=item.querySelector('.trigger');
+    t.addEventListener('click',e=>{e.stopPropagation();setOpen(item,!item.classList.contains('open'))});
+    item.addEventListener('mouseenter',()=>{if(matchMedia('(hover:hover)').matches){clearTimeout(closeT);setOpen(item,true)}});
+    item.addEventListener('mouseleave',()=>{if(matchMedia('(hover:hover)').matches){closeT=setTimeout(()=>setOpen(item,false),120)}});
+    item.addEventListener('focusout',e=>{if(!item.contains(e.relatedTarget))setOpen(item,false)});
+  });
+}
+document.addEventListener('click',()=>closeAll());
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAll();setBurger(false)}});
+function setBurger(on){$('#drawer').classList.toggle('on',on);$('#burger').setAttribute('aria-expanded',String(on))}
+$('#burger').addEventListener('click',()=>setBurger(!$('#drawer').classList.contains('on')));
+$('#drawer').addEventListener('click',e=>{if(e.target.closest('a'))setBurger(false)});
+renderMenu();
+
+
+/* Auth */
+const $$=s=>[...document.querySelectorAll(s)];
+const fL=$('#formLogin'),fR=$('#formRegister'),tL=$('#tabLogin'),tR=$('#tabRegister');
+function show(which,focus){
+  const reg=which==='register';
+  fL.hidden=reg;fR.hidden=!reg;
+  tL.setAttribute('aria-selected',String(!reg));tR.setAttribute('aria-selected',String(reg));
+  $('#sideTitle').textContent=reg?'Join your study community.':'Welcome back.';
+  $('#sideText').textContent=reg?'Make an account to join classrooms, keep notes and track your review streak.':'Pick up where you left off: your notes, your classrooms and your review streak are waiting.';
+  document.title=reg?'Conventus Register':'Conventus Log In';
+  if(focus)(reg?$('#r-name'):$('#l-id')).focus();
+}
+function route(focus){show(location.hash==='#register'?'register':'login',focus)}
+addEventListener('hashchange',()=>route(true));
+tL.addEventListener('click',()=>{location.hash='login'});
+tR.addEventListener('click',()=>{location.hash='register'});
+route(false);
+
+$$('.show').forEach(b=>b.addEventListener('click',()=>{
+  const i=document.getElementById(b.dataset.for),on=i.type==='password';
+  i.type=on?'text':'password';b.textContent=on?'Hide':'Show';b.setAttribute('aria-label',on?'Hide password':'Show password');
+}));
+
+function setErr(id,msg){
+  const e=document.getElementById(id+'-e'),i=document.getElementById(id);
+  if(e)e.textContent=msg||'';
+  if(i&&i.type!=='checkbox')i.setAttribute('aria-invalid',msg?'true':'false');
+  return !msg;
+}
+const mail=v=>/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+function strength(p){let s=0;if(p.length>=8)s++;if(/[a-z]/.test(p)&&/[A-Z]/.test(p))s++;if(/\d/.test(p))s++;if(/[^A-Za-z0-9]/.test(p)||p.length>=12)s++;return p?Math.max(1,s):0}
+$('#r-pw').addEventListener('input',e=>{
+  const s=strength(e.target.value);document.querySelector('.meter').dataset.s=s;
+  $('#r-pw-h').textContent=['Use 8 or more characters with letters and numbers.','Weak. Add more characters.','Fair. Mix upper and lower case.','Good. A symbol or more length makes it strong.','Strong password.'][s];
+});
+
+fL.addEventListener('submit',e=>{
+  e.preventDefault();
+  const id=$('#l-id').value.trim(),pw=$('#l-pw').value;
+  const ok=[setErr('l-id',id?'':'Enter your email or username.'),setErr('l-pw',pw?'':'Enter your password.')].every(Boolean);
+  const n=$('#l-note');
+  if(!ok){n.hidden=true;(document.querySelector('#formLogin [aria-invalid="true"]')||{focus(){}}).focus();return}
+  n.hidden=false;n.textContent='Details look good. This is an example page, so no sign-in happened.';
+});
+fR.addEventListener('submit',e=>{
+  e.preventDefault();
+  const name=$('#r-name').value.trim(),u=$('#r-user').value.trim().replace(/^@/,''),em=$('#r-email').value.trim(),pw=$('#r-pw').value;
+  const res=[
+    setErr('r-name',name.length>=2?'':'Enter your full name.'),
+    setErr('r-user',/^[A-Za-z0-9_]{3,20}$/.test(u)?'':'Use 3 to 20 letters, numbers or underscores.'),
+    setErr('r-email',mail(em)?'':'Enter a valid email address.'),
+    setErr('r-pw',pw.length>=8&&/\d/.test(pw)&&/[A-Za-z]/.test(pw)?'':'Use at least 8 characters with letters and numbers.'),
+    setErr('r-terms',$('#r-terms').checked?'':'Agree to the Terms to continue.')
+  ];
+  const n=$('#r-note');
+  if(!res.every(Boolean)){n.hidden=true;(document.querySelector('#formRegister [aria-invalid="true"]')||$('#r-terms')).focus();return}
+  n.hidden=false;n.textContent=`Details look good, @${u}. This is an example page, so no account was created.`;
+});
+['l-id','l-pw','r-name','r-user','r-email','r-pw'].forEach(id=>document.getElementById(id).addEventListener('input',()=>setErr(id,'')));
+$$('[data-sso]').forEach(b=>b.addEventListener('click',()=>{const n=b.closest('form').querySelector('.note');n.hidden=false;n.textContent='Google sign-in is not connected in this example page.'}));
+</script>
+
+</html>
