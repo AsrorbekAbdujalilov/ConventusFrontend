@@ -24,9 +24,9 @@ export const NAV_ITEMS = [
     key: 'games',
     title: 'Games',
     items: [
-      { title: 'Create game', desc: 'Turn a deck into a live quiz game', href: '#feature-games' },
-      { title: 'Join lobby', desc: 'Jump into a game with a PIN', href: '#feature-games' },
-      { title: 'Library', desc: 'Games you and others have made', href: '#feature-games' },
+      { title: 'Create game', desc: 'Turn a deck into a live quiz game', href: '#games-create' },
+      { title: 'Join lobby', desc: 'Jump into a game with a PIN', href: '#games-lobby' },
+      { title: 'Library', desc: 'Games you and others have made', href: '#games-library' },
     ],
   },
   {
@@ -39,20 +39,14 @@ export const NAV_ITEMS = [
     ],
   },
   {
-    key: 'creator',
-    title: 'Assessment creator',
+    key: 'assessments',
+    title: 'Assessments',
     items: [
-      { title: 'Create', desc: 'Build a quiz or exam', href: '#feature-assessments' },
-      { title: 'My assessments', desc: 'Drafts and published papers', href: '#feature-assessments' },
-      { title: 'Library', desc: 'Reusable question banks', href: '#feature-assessments' },
-    ],
-  },
-  {
-    key: 'checker',
-    title: 'Assessment checker',
-    items: [
-      { title: 'Check', desc: 'Upload answers and get feedback', href: '#feature-assessments' },
-      { title: 'History', desc: 'Past results and progress', href: '#feature-assessments' },
+      { title: 'Create assessment', desc: 'Build a quiz or exam with custom rubrics', href: '#feature-assessments' },
+      { title: 'Assessment checker', desc: 'Upload answers and get automated grading', href: '#feature-assessments' },
+      { title: 'My assessments', desc: 'Drafts, published papers, and tests', href: '#feature-assessments' },
+      { title: 'Library & question banks', desc: 'Reusable question banks & templates', href: '#feature-assessments' },
+      { title: 'History & progress', desc: 'Analytics and student improvement curves', href: '#feature-assessments' },
     ],
   },
   {
@@ -211,6 +205,8 @@ export function Navbar({
                     fontWeight: 500,
                     fontSize: '0.9375rem',
                     cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
                     transition: 'background 0.15s, color 0.15s',
                   }}
                 >

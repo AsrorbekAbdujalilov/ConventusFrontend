@@ -1,0 +1,190 @@
+/* ╔════════════════════════════════════════════════════════════════════════════╗
+ * ║  👤 CONVENTUS USER PROFILE & ACCOUNT SETTINGS STYLES                      ║
+ * ║  File: /src/styles/profile.css                                            ║
+ * ║  Reference: ConventusFrontend/skills/UI.md & ConventusBackend/accounts     ║
+ * ║  Scope: Dedicated profile layout, avatar header, form cards, subject tags ║
+ * ╚════════════════════════════════════════════════════════════════════════════╝ */
+
+.profile-container {
+  padding-block: 2.5rem 4rem;
+  max-width: 64rem;
+  margin-inline: auto;
+  width: 100%;
+}
+
+.profile-header-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.profile-identity {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.profile-avatar-large {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  background: var(--secondary);
+  color: var(--on-secondary);
+  display: grid;
+  place-items: center;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 2rem;
+  box-shadow: var(--shadow);
+  flex-shrink: 0;
+}
+
+.profile-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.profile-display-name {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.profile-handle {
+  font-family: var(--f-mono);
+  font-size: 0.9375rem;
+  color: var(--muted);
+}
+
+.profile-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.profile-card-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.profile-section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+}
+
+.profile-section-desc {
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin: 0.2rem 0 0;
+}
+
+.profile-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 40rem) {
+  .profile-grid-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.profile-subjects-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.profile-subject-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.profile-subject-chip:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.profile-subject-chip[aria-pressed="true"] {
+  background: var(--primary);
+  color: var(--primary-ink);
+  border-color: var(--primary);
+}
+
+.profile-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+
+.profile-plan-card {
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  background: var(--card);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-plan-card:hover {
+  border-color: var(--primary);
+}
+
+.profile-plan-card.selected {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.profile-actions-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  position: sticky;
+  bottom: 1.5rem;
+  background: var(--card);
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  z-index: 20;
+}

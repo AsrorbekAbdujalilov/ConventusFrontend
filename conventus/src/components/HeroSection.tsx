@@ -100,7 +100,7 @@ export function HeroSection({ onStartClick }: HeroSectionProps) {
           </a>
           <a
             className="btn orange"
-            href="#feature-games"
+            href="#games-lobby"
             style={{ padding: '0.75rem 1.4rem', fontSize: '1rem' }}
           >
             Join a Game Lobby

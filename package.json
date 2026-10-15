@@ -1,0 +1,11 @@
+{
+  "name": "conventus-frontend-root",
+  "private": true,
+  "description": "Root runner for Conventus frontend workspace",
+  "scripts": {
+    "dev": "npm --prefix conventus run dev",
+    "build": "npm --prefix conventus run build",
+    "lint": "npm --prefix conventus run lint",
+    "preview": "npm --prefix conventus run preview"
+  }
+}

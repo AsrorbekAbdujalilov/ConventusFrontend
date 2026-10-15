@@ -7,6 +7,8 @@ import type {
   RegisterPayload,
   Subject,
   UserProfile,
+  UserProfileUpdatePayload,
+  UserProfileUpdateResponse,
 } from './types'
 
 export const authApi = {
@@ -66,6 +68,16 @@ export const authApi = {
   async getProfile(): Promise<UserProfile> {
     return apiClient<UserProfile>('/api/auth/profile/', {
       method: 'GET',
+    })
+  },
+
+  /**
+   * Update authenticated user's profile (bio, grade, subscription, place_of_work, names, subjects, password)
+   */
+  async updateProfile(payload: UserProfileUpdatePayload): Promise<UserProfileUpdateResponse> {
+    return apiClient<UserProfileUpdateResponse>('/api/auth/profile/', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
     })
   },
 

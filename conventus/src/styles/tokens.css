@@ -1,0 +1,284 @@
+/* ╔════════════════════════════════════════════════════════════════════════════╗
+ * ║  🎨 CONVENTUS DESIGN TOKENS & 10 CURATED PALETTES                          ║
+ * ║  File: /src/styles/tokens.css                                             ║
+ * ║  Reference: ConventusFrontend/skills/UI.md                                ║
+ * ║  Scope: Global CSS variables, typography scales, light & dark palettes     ║
+ * ╚════════════════════════════════════════════════════════════════════════════╝ */
+
+:root {
+  /* ==========================================
+   * 1. FONT FAMILIES
+   * ========================================== */
+  --f-body: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --f-display: 'Outfit', 'Cabinet Grotesk', system-ui, -apple-system, sans-serif;
+  --f-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+
+  /* ==========================================
+   * 2. RADIUS & SHADOW STANDARDS (UI.md Sec 5)
+   * ========================================== */
+  --radius-sm: 8px;
+  --radius-md: 12px;   /* Buttons & Inputs */
+  --radius-lg: 16px;   /* Cards & Containers */
+  --radius-xl: 24px;   /* Modals & Floating Panels */
+  --radius-full: 9999px;
+
+  /* ==========================================
+   * 3. PALETTE 1: WARM CAMPUS (Default Theme)
+   * Cozy study lounge atmosphere
+   * ========================================== */
+  --bg: #FFFFFF;
+  --surface: #F6F7FB;
+  --card: #FFFFFF;
+  --text: #111827;
+  --muted: #5B6472;
+  --border: #E5E7EB;
+  --primary: #4F46E5;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #EEF2FF;
+  --secondary: #F97316;
+  --on-secondary: #2A1100;
+  --accent: #FEF3C7;
+  --accent-ink: #78350F;
+  --ok: #059669;
+  --ok-soft: #D1FAE5;
+  --danger: #B91C1C;
+  --danger-soft: #FEE2E2;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+  color-scheme: light;
+}
+
+/* ==========================================
+ * PALETTE 2: MIDNIGHT FOCUS (Dark Mode)
+ * Late-night exam cramming, minimal eye strain
+ * ========================================== */
+:root[data-palette="midnight"] {
+  --bg: #0F172A;
+  --surface: #1E293B;
+  --card: #1E293B;
+  --text: #F8FAFC;
+  --muted: #A5B1C5;
+  --border: #334155;
+  --primary: #6366F1;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #27305A;
+  --secondary: #FB923C;
+  --on-secondary: #2A1100;
+  --accent: #3B2F12;
+  --accent-ink: #FDE68A;
+  --ok: #10B981;
+  --ok-soft: #064E3B;
+  --danger: #F87171;
+  --danger-soft: #450A0A;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 20px 30px -10px rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+
+/* ==========================================
+ * PALETTE 3: EMERALD GROWTH
+ * Gamified progress tracking & streak rewards
+ * ========================================== */
+:root[data-palette="emerald"] {
+  --bg: #FFFFFF;
+  --surface: #F0FDF4;
+  --card: #FFFFFF;
+  --text: #064E3B;
+  --muted: #4B6B5E;
+  --border: #D1E7DB;
+  --primary: #059669;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #DCFCE7;
+  --secondary: #10B981;
+  --on-secondary: #022C22;
+  --accent: #FEF9C3;
+  --accent-ink: #713F12;
+  --ok: #059669;
+  --ok-soft: #DCFCE7;
+  --danger: #DC2626;
+  --danger-soft: #FEE2E2;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.06);
+  color-scheme: light;
+}
+
+/* ==========================================
+ * PALETTE 4: SOFT PASTEL LOUNGE
+ * Calming aesthetic to lower study anxiety
+ * ========================================== */
+:root[data-palette="pastel"] {
+  --bg: #FFFFFF;
+  --surface: #FAF5FF;
+  --card: #FFFFFF;
+  --text: #2E1065;
+  --muted: #6B5A8E;
+  --border: #E9DDF7;
+  --primary: #7C3AED;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #EDE9FE;
+  --secondary: #EC4899;
+  --on-secondary: #2E1065;
+  --accent: #E0E7FF;
+  --accent-ink: #312E81;
+  --ok: #059669;
+  --ok-soft: #D1FAE5;
+  --danger: #E11D48;
+  --danger-soft: #FFE4E6;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.06);
+  color-scheme: light;
+}
+
+/* ==========================================
+ * PALETTE 5: ACADEMIC NAVY
+ * Formal look for schools & educators
+ * ========================================== */
+:root[data-palette="navy"] {
+  --bg: #FFFFFF;
+  --surface: #F1F5F9;
+  --card: #FFFFFF;
+  --text: #0F172A;
+  --muted: #52607A;
+  --border: #DDE3EC;
+  --primary: #1E3A8A;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #E0E7FF;
+  --secondary: #2563EB;
+  --on-secondary: #FFFFFF;
+  --accent: #FEF3C7;
+  --accent-ink: #78350F;
+  --ok: #059669;
+  --ok-soft: #D1FAE5;
+  --danger: #DC2626;
+  --danger-soft: #FEE2E2;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.06);
+  color-scheme: light;
+}
+
+/* ==========================================
+ * PALETTE 6: SUNSET PRODUCTIVITY
+ * High energy for timers and active quizzes
+ * ========================================== */
+:root[data-palette="sunset"] {
+  --bg: #FFFFFF;
+  --surface: #FFF7ED;
+  --card: #FFFFFF;
+  --text: #451A03;
+  --muted: #7A5A44;
+  --border: #F3DFCB;
+  --primary: #EA580C;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #FFEDD5;
+  --secondary: #D97706;
+  --on-secondary: #FFFFFF;
+  --accent: #FED7AA;
+  --accent-ink: #7C2D12;
+  --ok: #059669;
+  --ok-soft: #D1FAE5;
+  --danger: #DC2626;
+  --danger-soft: #FEE2E2;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.06);
+  color-scheme: light;
+}
+
+/* ==========================================
+ * PALETTE 7: OCEAN CALM
+ * Clean, distraction-free reading
+ * ========================================== */
+:root[data-palette="ocean"] {
+  --bg: #FFFFFF;
+  --surface: #F0F9FF;
+  --card: #FFFFFF;
+  --text: #0C4A6E;
+  --muted: #4C6B82;
+  --border: #D3E6F2;
+  --primary: #0284C7;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #E0F2FE;
+  --secondary: #0D9488;
+  --on-secondary: #042F2E;
+  --accent: #BAE6FD;
+  --accent-ink: #0C4A6E;
+  --ok: #059669;
+  --ok-soft: #D1FAE5;
+  --danger: #E11D48;
+  --danger-soft: #FFE4E6;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.06);
+  color-scheme: light;
+}
+
+/* ==========================================
+ * PALETTE 8: CYBER STUDENT (Dark Mode)
+ * Engaging high-contrast modern UI
+ * ========================================== */
+:root[data-palette="cyber"] {
+  --bg: #18181B;
+  --surface: #27272A;
+  --card: #27272A;
+  --text: #FAFAFA;
+  --muted: #A1A1AA;
+  --border: #3F3F46;
+  --primary: #8B5CF6;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #2E2650;
+  --secondary: #06B6D4;
+  --on-secondary: #042F2E;
+  --accent: #F43F5E;
+  --accent-ink: #FFFFFF;
+  --ok: #10B981;
+  --ok-soft: #064E3B;
+  --danger: #FB7185;
+  --danger-soft: #4C0519;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+
+/* ==========================================
+ * PALETTE 9: PAPER & INK
+ * Minimalist editorial, notes & markdown
+ * ========================================== */
+:root[data-palette="paper"] {
+  --bg: #FFFFFF;
+  --surface: #FAF9F6;
+  --card: #FFFFFF;
+  --text: #09090B;
+  --muted: #52525B;
+  --border: #E4E4E7;
+  --primary: #18181B;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #F4F4F5;
+  --secondary: #71717A;
+  --on-secondary: #FFFFFF;
+  --accent: #E4E4E7;
+  --accent-ink: #18181B;
+  --ok: #059669;
+  --ok-soft: #D1FAE5;
+  --danger: #DC2626;
+  --danger-soft: #FEE2E2;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.06);
+  color-scheme: light;
+}
+
+/* ==========================================
+ * PALETTE 10: MINT & CORAL
+ * Friendly, balanced modern SaaS
+ * ========================================== */
+:root[data-palette="mint"] {
+  --bg: #FFFFFF;
+  --surface: #F0FDFA;
+  --card: #FFFFFF;
+  --text: #134E4A;
+  --muted: #4A6E6A;
+  --border: #D3EBE7;
+  --primary: #0D9488;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #CCFBF1;
+  --secondary: #F43F5E;
+  --on-secondary: #4C0519;
+  --accent: #FFE4E6;
+  --accent-ink: #881337;
+  --ok: #0D9488;
+  --ok-soft: #CCFBF1;
+  --danger: #E11D48;
+  --danger-soft: #FFE4E6;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.06);
+  color-scheme: light;
+}

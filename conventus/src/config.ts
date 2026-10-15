@@ -11,5 +11,5 @@ export const APP_CONFIG = {
    * configured to forward to http://127.0.0.1:8000.
    * If running directly without proxy, set to e.g. 'http://127.0.0.1:8000'.
    */
-  apiBaseUrl: '',
+  apiBaseUrl: 'http://127.0.0.1:8000',
 } as const

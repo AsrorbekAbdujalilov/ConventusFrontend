@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Conventus Arena — Live Multiplayer Quiz</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* ==========================================================================
+ * Conventus Design System — Arena Template (Reference: UI.md)
+ * ========================================================================== */
+:root {
+  --f-body: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --f-display: 'Outfit', 'Cabinet Grotesk', system-ui, sans-serif;
+  --f-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+
+  /* Palette 1: Warm Campus (Default) */
+  --bg: #FFFFFF;
+  --surface: #F6F7FB;
+  --card: #FFFFFF;
+  --text: #111827;
+  --muted: #5B6472;
+  --border: #E5E7EB;
+  --primary: #4F46E5;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #EEF2FF;
+  --secondary: #F97316;
+  --on-secondary: #2A1100;
+  --accent: #FEF3C7;
+  --accent-ink: #78350F;
+  --ok: #059669;
+  --ok-soft: #D1FAE5;
+  --danger: #B91C1C;
+  --danger-soft: #FEE2E2;
+  --shadow: 0 1px 2px rgba(15,23,42,.05), 0 8px 20px rgba(15,23,42,.06);
+  --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.1);
+}
+
+/* Palette 2: Midnight Focus */
+:root[data-palette="midnight"] {
+  --bg: #0F172A; --surface: #1E293B; --card: #1E293B; --text: #F8FAFC;
+  --muted: #A5B1C5; --border: #334155; --primary: #6366F1; --primary-ink: #FFFFFF;
+  --primary-soft: #27305A; --secondary: #FB923C; --on-secondary: #2A1100;
+  --accent: #3B2F12; --accent-ink: #FDE68A; --ok: #10B981; --ok-soft: #064E3B;
+  --danger: #F87171; --danger-soft: #450A0A; --shadow: 0 8px 24px rgba(0,0,0,.45);
+}
+
+/* Palette 3: Emerald Growth */
+:root[data-palette="emerald"] {
+  --bg: #FFFFFF; --surface: #F0FDF4; --card: #FFFFFF; --text: #064E3B;
+  --muted: #4B6B5E; --border: #D1E7DB; --primary: #059669; --primary-ink: #FFFFFF;
+  --primary-soft: #DCFCE7; --secondary: #10B981; --on-secondary: #022C22;
+  --accent: #FEF9C3; --accent-ink: #713F12; --ok: #059669; --ok-soft: #DCFCE7;
+  --danger: #DC2626; --danger-soft: #FEE2E2;
+}
+
+/* Palette 8: Cyber Student */
+:root[data-palette="cyber"] {
+  --bg: #18181B; --surface: #27272A; --card: #27272A; --text: #FAFAFA;
+  --muted: #A1A1AA; --border: #3F3F46; --primary: #8B5CF6; --primary-ink: #FFFFFF;
+  --primary-soft: #2E2650; --secondary: #06B6D4; --on-secondary: #042F2E;
+  --accent: #F43F5E; --accent-ink: #FFFFFF; --ok: #10B981; --ok-soft: #064E3B;
+  --danger: #FB7185; --danger-soft: #4C0519; --shadow: 0 8px 24px rgba(0,0,0,.45);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 400 1rem/1.6 var(--f-body); transition: background .15s, color .15s; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; border-radius: 8px; }
+h1,h2,h3,h4 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
+.wrap { max-width: 80rem; margin-inline: auto; padding-inline: 1rem; }
+@media(min-width:640px){.wrap{padding-inline:1.5rem}}
+
+/* Navbar */
+.nav { position: sticky; top: 0; z-index: 50; background: var(--bg); border-bottom: 1px solid var(--border); }
+.nav-in { display: flex; align-items: center; gap: .5rem; height: 4rem; }
+.logo { display: flex; align-items: center; gap: .6rem; font: 700 1.25rem var(--f-display); margin-right: .75rem; }
+.logo i { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: .75rem; background: var(--primary); color: var(--primary-ink); }
+.menu { display: none; list-style: none; margin: 0; padding: 0; gap: .1rem; align-items: center; }
+.item { position: relative; }
+.trigger { display: flex; align-items: center; gap: .3rem; border: 0; background: none; padding: .5rem .7rem; border-radius: .75rem; font-weight: 500; font-size: .9375rem; }
+.trigger svg { width: .8rem; height: .8rem; transition: transform .2s; }
+.trigger:hover, .item.open .trigger { background: var(--primary-soft); color: var(--primary); }
+.item.open .trigger svg { transform: rotate(180deg); }
+.panel { position: absolute; left: 0; top: 100%; min-width: 17rem; padding: .5rem; margin-top: .35rem; background: var(--card); border: 1px solid var(--border); border-radius: 1.25rem; box-shadow: var(--shadow); opacity: 0; visibility: hidden; transform: translateY(-4px); transition: .15s; z-index: 100; }
+.item.open .panel { opacity: 1; visibility: visible; transform: none; }
+.panel a { display: block; padding: .6rem .75rem; border-radius: .75rem; }
+.panel a:hover { background: var(--primary-soft); }
+.panel b { display: block; font-weight: 600; font-size: .9375rem; }
+.panel small { display: block; color: var(--muted); font-size: .8125rem; }
+.right { margin-left: auto; display: flex; align-items: center; gap: .5rem; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; border: 1px solid transparent; border-radius: .75rem; padding: .55rem 1rem; font-weight: 600; font-size: .9375rem; background: none; transition: .15s; }
+.btn.primary { background: var(--primary); color: var(--primary-ink); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.ghost:hover { background: var(--primary-soft); color: var(--primary); }
+.btn.line { border-color: var(--border); background: var(--card); }
+.btn.line:hover { border-color: var(--primary); color: var(--primary); }
+.btn.orange { background: var(--secondary); color: var(--on-secondary); }
+.btn.orange:hover { filter: brightness(1.08); }
+.btn.ok { background: var(--ok); color: #fff; }
+.btn.big { padding: .8rem 1.4rem; width: 100%; font-size: 1rem; }
+@media(min-width:68rem){.menu{display:flex}}
+
+/* Arena Layout */
+.arena-hero { padding-block: 2.5rem 1.5rem; display: flex; flex-direction: column; gap: .75rem; }
+.eyebrow { display: inline-flex; gap: .5rem; align-items: center; background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: .25rem .8rem; font-size: .875rem; font-weight: 600; width: fit-content; }
+.tabs { display: flex; flex-wrap: wrap; gap: .5rem; background: var(--surface); border: 1px solid var(--border); padding: .35rem; border-radius: 1rem; margin-bottom: 2rem; }
+.tab-btn { border: 0; background: none; padding: .65rem 1.25rem; border-radius: .75rem; font-weight: 600; color: var(--muted); transition: .15s; }
+.tab-btn[aria-selected="true"] { background: var(--card); color: var(--primary); box-shadow: 0 1px 3px rgba(15,23,42,.08); }
+
+/* Join Card */
+.join-card { max-width: 32rem; margin-inline: auto; background: var(--card); border: 1px solid var(--border); border-radius: 1.5rem; padding: 2.25rem; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 1.5rem; text-align: center; }
+.pin-inp { font-family: var(--f-mono); font-size: 2.25rem; letter-spacing: .35em; text-align: center; font-weight: 700; padding: .85rem 1rem; border: 2px solid var(--border); border-radius: 1rem; background: var(--surface); color: var(--text); width: 100%; }
+.pin-inp:focus { outline: none; border-color: var(--primary); }
+.inp { width: 100%; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: .75rem; padding: .75rem 1rem; font: inherit; }
+.inp:focus { outline: none; border-color: var(--primary); }
+
+/* Lobby Screen */
+.lobby-card { background: var(--card); border: 1px solid var(--border); border-radius: 1.5rem; padding: 2rem; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 1.5rem; }
+.lobby-bar { background: var(--primary-soft); border: 1px solid var(--primary); border-radius: 1rem; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.code-pill { font-family: var(--f-mono); font-size: 1.85rem; font-weight: 700; letter-spacing: .15em; color: var(--primary); background: var(--card); padding: .35rem 1.25rem; border-radius: .75rem; border: 1px solid var(--border); display: inline-flex; align-items: center; gap: .75rem; }
+.pulse { width: .75rem; height: .75rem; border-radius: 50%; background: var(--ok); display: inline-block; animation: aPulse 1.8s infinite; }
+@keyframes aPulse { 0% { transform: scale(.95); box-shadow: 0 0 0 0 rgba(5,150,105,.7); } 70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(5,150,105,0); } 100% { transform: scale(.95); box-shadow: 0 0 0 0 rgba(5,150,105,0); } }
+.roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: .85rem; }
+.chip { display: flex; align-items: center; gap: .65rem; background: var(--surface); border: 1px solid var(--border); padding: .65rem .85rem; border-radius: .75rem; font-weight: 600; font-size: .9375rem; }
+.av { width: 1.85rem; height: 1.85rem; border-radius: 50%; background: var(--secondary); color: var(--on-secondary); display: grid; place-items: center; font-family: var(--f-display); font-weight: 700; font-size: .8125rem; }
+
+/* In-Game Question Screen */
+.play-box { max-width: 48rem; margin-inline: auto; display: flex; flex-direction: column; gap: 1.5rem; }
+.t-bar { width: 100%; height: .65rem; background: var(--surface); border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
+.t-fill { height: 100%; background: var(--secondary); border-radius: 999px; transition: width 1s linear; }
+.q-card { background: var(--card); border: 1px solid var(--border); border-radius: 1.5rem; padding: 2.25rem 2rem; box-shadow: var(--shadow-lg); text-align: center; }
+.choices { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+@media(min-width:40rem){.choices{grid-template-columns:1fr 1fr}}
+.c-btn { display: flex; align-items: center; gap: 1rem; padding: 1.15rem 1.25rem; border: 2px solid var(--border); background: var(--card); border-radius: 1rem; font-size: 1.0625rem; font-weight: 600; text-align: left; transition: .15s; }
+.c-btn:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow); }
+.c-btn.sel { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
+.c-btn.ok { border-color: var(--ok); background: var(--ok-soft); color: var(--ok); }
+.c-btn.bad { border-color: var(--danger); background: var(--danger-soft); color: var(--danger); }
+.c-let { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: .6rem; font-family: var(--f-display); font-weight: 700; flex-shrink: 0; background: var(--primary-soft); color: var(--primary); }
+
+/* Podium Screen */
+.podium-stage { display: flex; align-items: flex-end; justify-content: center; gap: 1rem; max-width: 30rem; margin: 2rem auto; }
+.podium-box { border-radius: 1rem 1rem 0 0; display: flex; align-items: center; justify-content: center; font-family: var(--f-display); font-weight: 700; font-size: 1.75rem; width: 8rem; }
+.p1 { height: 9rem; background: #FDE047; color: #713F12; border: 2px solid #CA8A04; }
+.p2 { height: 6.5rem; background: #E2E8F0; color: #334155; border: 2px solid #94A3B8; }
+.p3 { height: 4.5rem; background: #FED7AA; color: #7C2D12; border: 2px solid #EA580C; }
+
+/* Decks Grid */
+.deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr)); gap: 1.25rem; }
+.deck-card { background: var(--card); border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem; display: flex; flex-direction: column; gap: .75rem; box-shadow: var(--shadow); }
+.deck-card:hover { border-color: var(--primary); }
+.badge { font-size: .8125rem; font-weight: 600; border-radius: 999px; padding: .2rem .7rem; width: fit-content; }
+.b-live { background: #D1FAE5; color: #065F46; }
+.b-prog { background: #E0E7FF; color: #3730A3; }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <div class="nav-in">
+      <a class="logo" href="conventus-home.html" aria-label="Conventus home">
+        <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-4 9 4-9 4-9-4z"/><path d="M7 10.5V15c0 1.5 2.2 3 5 3s5-1.500 5-3v-4.500"/></svg></i>Conventus
+      </a>
+      <ul class="menu" id="menu">
+        <li class="item"><a class="trigger" href="conventus-home.html">Classroom</a></li>
+        <li class="item"><a class="trigger" href="conventus-arena.html" style="color:var(--primary);font-weight:600">Games (Arena)</a></li>
+        <li class="item"><a class="trigger" href="conventus-home.html#notes">Notes</a></li>
+        <li class="item"><a class="trigger" href="conventus-home.html#assessments">Assessments</a></li>
+      </ul>
+      <div class="right">
+        <select id="palSelect" class="btn line" style="padding:.4rem .7rem;font-size:.875rem" aria-label="Theme Palette">
+          <option value="campus">Warm Campus (Default)</option>
+          <option value="midnight">Midnight Focus (Dark)</option>
+          <option value="emerald">Emerald Growth</option>
+          <option value="cyber">Cyber Student (Dark)</option>
+        </select>
+        <a class="btn ghost" href="conventus-auth.html#login">Log in</a>
+        <a class="btn primary" href="conventus-auth.html#register">Register</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" style="padding-bottom: 4rem;">
+  <div class="arena-hero">
+    <span class="eyebrow">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      Conventus Arena · Live Multiplayer
+    </span>
+    <h1 style="font-size:clamp(2rem,5vw,2.75rem);font-weight:700">Live Multiplayer Quiz &amp; Battle Arena</h1>
+    <p style="color:var(--muted);font-size:1.0625rem;max-width:38rem;margin:0">
+      Turn any study deck into a live competition. Join active classroom games with a PIN or host matches with real-time scoreboards.
+    </p>
+  </div>
+
+  <!-- Mode Switcher -->
+  <div class="tabs">
+    <button class="tab-btn" id="btnTabJoin" aria-selected="true" onclick="switchMode('join')">Enter PIN</button>
+    <button class="tab-btn" id="btnTabHost" aria-selected="false" onclick="switchMode('host')">Host Match</button>
+    <button class="tab-btn" id="btnTabDecks" aria-selected="false" onclick="switchMode('decks')">Deck Library</button>
+    <button class="tab-btn" id="btnTabPlay" aria-selected="false" onclick="switchMode('play')">Play Demo Game ▶</button>
+  </div>
+
+  <!-- VIEW 1: JOIN WITH PIN -->
+  <section id="viewJoin" class="join-card">
+    <div>
+      <h2 style="font-size:1.75rem;font-weight:700">Enter Game PIN</h2>
+      <p style="color:var(--muted);font-size:.9375rem;margin:.35rem 0 0">Enter the 6-digit PIN code from your teacher.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:1.25rem">
+      <input type="text" id="pinInput" class="pin-inp" placeholder="482910" maxlength="6">
+      <input type="text" id="nameInput" class="inp" placeholder="Your Nickname (e.g. Jasur)">
+      <button class="btn primary big" onclick="handleJoin()">Join Match Lobby →</button>
+    </div>
+  </section>
+
+  <!-- VIEW 2: HOST LOBBY -->
+  <section id="viewLobby" class="lobby-card" style="display:none">
+    <div class="lobby-bar">
+      <div>
+        <span style="font-family:var(--f-mono);font-size:.8125rem;color:var(--muted);text-transform:uppercase">Host Lobby Ready</span>
+        <h2 style="font-size:1.75rem;font-weight:700;margin:.2rem 0 0">Cellular Respiration Review</h2>
+      </div>
+      <div class="code-pill">
+        <span class="pulse"></span>
+        <span id="lobbyPinDisplay">PIN: 482910</span>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+      <h3 style="font-size:1.25rem;font-weight:600">Connected Players (<span id="playerCount">3</span>)</h3>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn line" onclick="switchMode('join')">Cancel Session</button>
+        <button class="btn ok" onclick="switchMode('play')">Start Match Now ▶</button>
+      </div>
+    </div>
+    <div class="roster" id="rosterGrid">
+      <div class="chip"><span class="av">AK</span><span>Alex (You)</span></div>
+      <div class="chip"><span class="av">MS</span><span>Malika S.</span></div>
+      <div class="chip"><span class="av">JT</span><span>Jasur T.</span></div>
+    </div>
+  </section>
+
+  <!-- VIEW 3: IN-GAME QUESTION SCREEN -->
+  <section id="viewPlay" class="play-box" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <span class="pulse"></span>
+        <strong style="font-family:var(--f-mono)">PIN: 482910</strong>
+      </div>
+      <strong style="font-family:var(--f-mono);color:var(--primary)" id="scoreBadge">Score: 0 pts</strong>
+    </div>
+
+    <div>
+      <div class="t-bar"><div class="t-fill" id="timerFill" style="width:100%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:.8125rem;color:var(--muted);margin-top:.35rem">
+        <span>Question 1 of 2</span>
+        <strong id="timerSecs" style="font-family:var(--f-mono)">30s</strong>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <span style="font-family:var(--f-mono);font-size:.8125rem;color:var(--primary);font-weight:600;letter-spacing:.08em;text-transform:uppercase">Active Recall Challenge</span>
+      <h2 style="font-size:1.65rem;margin-top:.5rem" id="qText">Which organelle produces the majority of ATP in eukaryotic cells?</h2>
+    </div>
+
+    <div class="choices" id="choicesGrid">
+      <button class="c-btn" onclick="answer(0)"><span class="c-let">A</span><span>Mitochondria</span></button>
+      <button class="c-btn" onclick="answer(1)"><span class="c-let">B</span><span>Ribosome</span></button>
+      <button class="c-btn" onclick="answer(2)"><span class="c-let">C</span><span>Endoplasmic Reticulum</span></button>
+      <button class="c-btn" onclick="answer(3)"><span class="c-let">D</span><span>Golgi Apparatus</span></button>
+    </div>
+
+    <div id="feedbackBox" style="display:none;background:var(--ok-soft);color:var(--ok);border:1px solid var(--ok);border-radius:1rem;padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center">
+      <div><strong>✓ Correct Answer! +100 Points</strong><br><small>Mitochondria generate ATP via oxidative phosphorylation.</small></div>
+      <button class="btn primary" onclick="showPodium()">Next / Finish →</button>
+    </div>
+  </section>
+
+  <!-- VIEW 4: PODIUM RESULTS -->
+  <section id="viewPodium" style="display:none;text-align:center">
+    <span class="eyebrow">Match Concluded</span>
+    <h2 style="font-size:2.25rem;font-weight:700;margin:.5rem 0">Winner Podium &amp; Scores</h2>
+    <div class="podium-stage">
+      <div>
+        <span style="font-weight:600">Malika S.</span><br><small style="font-family:var(--f-mono)">300 pts</small>
+        <div class="podium-box p2">2</div>
+      </div>
+      <div>
+        <span style="font-size:1.25rem">👑</span><br>
+        <strong style="color:var(--primary)">Alex (You)</strong><br><small style="font-family:var(--f-mono)">400 pts</small>
+        <div class="podium-box p1">1</div>
+      </div>
+      <div>
+        <span style="font-weight:600">Jasur T.</span><br><small style="font-family:var(--f-mono)">200 pts</small>
+        <div class="podium-box p3">3</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:.75rem;justify-content:center;margin-top:2rem">
+      <button class="btn primary" onclick="switchMode('join')">Play Again</button>
+      <button class="btn line" onclick="switchMode('decks')">Browse More Decks</button>
+    </div>
+  </section>
+
+  <!-- VIEW 5: DECK LIBRARY -->
+  <section id="viewDecks" class="deck-grid" style="display:none">
+    <div class="deck-card">
+      <span class="badge b-live">Biology</span>
+      <h3 style="font-size:1.25rem">Cellular Respiration</h3>
+      <p style="color:var(--muted);font-size:.875rem">5 questions on mitochondria, ATP, and metabolic cycles.</p>
+      <div style="margin-top:auto;display:flex;justify-content:space-between;align-items:center">
+        <small style="color:var(--muted)">30s / question</small>
+        <button class="btn orange" onclick="switchMode('lobby')">Host Live Match →</button>
+      </div>
+    </div>
+    <div class="deck-card">
+      <span class="badge b-prog">Computer Science</span>
+      <h3 style="font-size:1.25rem">Data Structures: Stacks &amp; Queues</h3>
+      <p style="color:var(--muted);font-size:.875rem">LIFO vs FIFO, memory representations, and big-O complexity.</p>
+      <div style="margin-top:auto;display:flex;justify-content:space-between;align-items:center">
+        <small style="color:var(--muted)">20s / question</small>
+        <button class="btn primary" onclick="switchMode('lobby')">Host Live Match →</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+let score = 0;
+let timer = 30;
+let tInterval;
+
+function switchMode(mode) {
+  document.querySelectorAll('#viewJoin, #viewLobby, #viewPlay, #viewPodium, #viewDecks').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.tab-btn').forEach(b => b.setAttribute('aria-selected', 'false'));
+
+  if (mode === 'join') {
+    document.getElementById('viewJoin').style.display = 'flex';
+    document.getElementById('btnTabJoin').setAttribute('aria-selected', 'true');
+  } else if (mode === 'host' || mode === 'lobby') {
+    document.getElementById('viewLobby').style.display = 'flex';
+    document.getElementById('btnTabHost').setAttribute('aria-selected', 'true');
+  } else if (mode === 'decks') {
+    document.getElementById('viewDecks').style.display = 'grid';
+    document.getElementById('btnTabDecks').setAttribute('aria-selected', 'true');
+  } else if (mode === 'play') {
+    document.getElementById('viewPlay').style.display = 'flex';
+    document.getElementById('btnTabPlay').setAttribute('aria-selected', 'true');
+    startQuizTimer();
+  } else if (mode === 'podium') {
+    document.getElementById('viewPodium').style.display = 'block';
+  }
+}
+
+function handleJoin() {
+  const pin = document.getElementById('pinInput').value.trim() || '482910';
+  document.getElementById('lobbyPinDisplay').textContent = 'PIN: ' + pin;
+  switchMode('lobby');
+}
+
+function startQuizTimer() {
+  clearInterval(tInterval);
+  timer = 30;
+  const fill = document.getElementById('timerFill');
+  const txt = document.getElementById('timerSecs');
+  fill.style.width = '100%';
+  txt.textContent = '30s';
+
+  tInterval = setInterval(() => {
+    timer--;
+    txt.textContent = timer + 's';
+    fill.style.width = (timer / 30 * 100) + '%';
+    if (timer <= 0) {
+      clearInterval(tInterval);
+      showPodium();
+    }
+  }, 1000);
+}
+
+function answer(idx) {
+  clearInterval(tInterval);
+  const btns = document.querySelectorAll('.c-btn');
+  btns[idx].classList.add(idx === 0 ? 'ok' : 'bad');
+  if (idx === 0) {
+    score += 100;
+    document.getElementById('scoreBadge').textContent = 'Score: ' + score + ' pts';
+  }
+  document.getElementById('feedbackBox').style.display = 'flex';
+}
+
+function showPodium() {
+  clearInterval(tInterval);
+  switchMode('podium');
+}
+
+// Palette switcher
+document.getElementById('palSelect').addEventListener('change', (e) => {
+  const pal = e.target.value;
+  if (pal === 'campus') {
+    document.documentElement.removeAttribute('data-palette');
+  } else {
+    document.documentElement.setAttribute('data-palette', pal);
+  }
+});
+</script>
+
+</body>
+</html>

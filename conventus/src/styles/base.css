@@ -1,0 +1,197 @@
+/* ╔════════════════════════════════════════════════════════════════════════════╗
+ * ║  📐 CONVENTUS BASE RESET & GLOBAL UTILITIES                                ║
+ * ║  File: /src/styles/base.css                                               ║
+ * ║  Scope: Box sizing, typography scales, primary buttons, card surfaces      ║
+ * ╚════════════════════════════════════════════════════════════════════════════╝ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 1rem/1.6 var(--f-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: var(--f-display);
+  text-wrap: balance;
+  margin: 0;
+}
+
+.wrap {
+  max-width: 80rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+@media (min-width: 640px) {
+  .wrap {
+    padding-inline: 1.5rem;
+  }
+}
+
+/* ==========================================
+ * BUTTON SYSTEM (UI.md Sec 5 & Palettes)
+ * ========================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 0.55rem 1rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  background: none;
+  transition: all 0.15s ease-in-out;
+  user-select: none;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn.primary {
+  background: var(--primary);
+  color: var(--primary-ink);
+}
+
+.btn.primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.btn.ghost {
+  color: var(--text);
+}
+
+.btn.ghost:hover:not(:disabled) {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.btn.line {
+  border-color: var(--border);
+  background: var(--card);
+  color: var(--text);
+}
+
+.btn.line:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn.orange {
+  background: var(--secondary);
+  color: var(--on-secondary);
+}
+
+.btn.orange:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.btn.ok {
+  background: var(--ok);
+  color: #FFFFFF;
+}
+
+.btn.ok:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.btn.danger {
+  background: var(--danger);
+  color: #FFFFFF;
+}
+
+.btn.danger:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+/* ==========================================
+ * FLASHCARD 3D SCENE (UI.md Sec 3.B)
+ * ========================================== */
+.fc-scene {
+  perspective: 1100px;
+  max-width: 28rem;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.fc {
+  position: relative;
+  aspect-ratio: 3/2;
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+}
+
+.fc.flip {
+  transform: rotateY(180deg);
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.face.back {
+  transform: rotateY(180deg);
+  background: var(--primary);
+  color: var(--primary-ink);
+  border-color: var(--primary);
+}
+
+/* ==========================================
+ * ACCESSIBILITY & MOTION
+ * ========================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

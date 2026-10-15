@@ -5,7 +5,8 @@ import { FeaturesOverview } from './components/FeaturesOverview'
 import { CommunitySection } from './components/CommunitySection'
 import { Footer } from './components/Footer'
 import { AuthView } from './components/AuthView'
-import { ProfileModal } from './components/ProfileModal'
+import { ArenaView } from './components/ArenaView'
+import { ProfileView } from './components/ProfileView'
 import { ApiDashboard } from './components/ApiDashboard'
 import { authApi } from './api'
 import type { UserProfile } from './api/types'
@@ -13,14 +14,23 @@ import './App.css'
 
 function App() {
   const [user, setUser] = useState<UserProfile | null>(null)
-  const [currentView, setCurrentView] = useState<'home' | 'auth'>(() => {
+  const [currentView, setCurrentView] = useState<'home' | 'auth' | 'arena' | 'profile'>(() => {
     const hash = window.location.hash
-    return hash === '#login' || hash === '#register' ? 'auth' : 'home'
+    if (hash === '#login' || hash === '#register') return 'auth'
+    if (hash === '#profile') return 'profile'
+    if (hash.startsWith('#games') || hash === '#arena') return 'arena'
+    return 'home'
   })
   const [authMode, setAuthMode] = useState<'login' | 'register'>(() => {
     return window.location.hash === '#register' ? 'register' : 'login'
   })
-  const [profileModalOpen, setProfileModalOpen] = useState(false)
+  const [arenaTab, setArenaTab] = useState<'join' | 'host' | 'decks' | 'create'>(() => {
+    const hash = window.location.hash
+    if (hash === '#games-create') return 'create'
+    if (hash === '#games-library') return 'decks'
+    if (hash === '#games-host') return 'host'
+    return 'join'
+  })
   const [showDevApiDrawer, setShowDevApiDrawer] = useState(false)
 
   // Sync view state with URL hash
@@ -33,6 +43,14 @@ function App() {
       } else if (hash === '#login') {
         setCurrentView('auth')
         setAuthMode('login')
+      } else if (hash === '#profile') {
+        setCurrentView('profile')
+      } else if (hash.startsWith('#games') || hash === '#arena') {
+        setCurrentView('arena')
+        if (hash === '#games-create') setArenaTab('create')
+        else if (hash === '#games-library') setArenaTab('decks')
+        else if (hash === '#games-host') setArenaTab('host')
+        else setArenaTab('join')
       } else if (hash === '#top' || hash === '' || hash.startsWith('#feature')) {
         setCurrentView('home')
       }
@@ -65,7 +83,9 @@ function App() {
       await authApi.logout()
     } finally {
       setUser(null)
-      setProfileModalOpen(false)
+      if (currentView === 'profile') {
+        goToHome()
+      }
     }
   }
 
@@ -81,6 +101,11 @@ function App() {
     window.location.hash = 'register'
   }
 
+  const openProfile = () => {
+    setCurrentView('profile')
+    window.location.hash = 'profile'
+  }
+
   const goToHome = () => {
     setCurrentView('home')
     window.location.hash = 'top'
@@ -88,13 +113,13 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* 1. Extracted Navbar (64px sticky, solid bg, 1px border, theme picker, dropdowns) */}
+      {/* 1. Navbar with clean menu items, 10-theme picker, responsive drawer */}
       <Navbar
         user={user}
         onLoginClick={openLogin}
         onRegisterClick={openRegister}
         onLogout={handleLogout}
-        onProfileClick={() => setProfileModalOpen(true)}
+        onProfileClick={openProfile}
       />
 
       {/* 2. Main Page Content */}
@@ -108,6 +133,22 @@ function App() {
               goToHome()
             }}
             onSwitchToHome={goToHome}
+          />
+        ) : currentView === 'arena' ? (
+          /* Conventus Arena (Live Multiplayer Quiz Game) */
+          <ArenaView
+            user={user}
+            initialTab={arenaTab}
+            onRequireLogin={openLogin}
+            onBackToHome={goToHome}
+          />
+        ) : currentView === 'profile' ? (
+          /* Dedicated Profile & Account Settings Page */
+          <ProfileView
+            user={user}
+            onProfileUpdated={(updated) => setUser(updated)}
+            onBackToHome={goToHome}
+            onLogout={handleLogout}
           />
         ) : (
           /* Conventus Home Page */
@@ -151,7 +192,7 @@ function App() {
                     Backend REST API Inspection &amp; Live Status
                   </strong>
                   <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--muted)' }}>
-                    Verify live connection to Django backend with HttpOnly cookies.
+                    Verify live connection to Django backend with HttpOnly cookies &amp; WebSockets.
                   </p>
                 </div>
 
@@ -183,14 +224,6 @@ function App() {
 
       {/* 3. Extracted Footer */}
       <Footer />
-
-      {/* Profile Details Modal */}
-      <ProfileModal
-        isOpen={profileModalOpen}
-        user={user}
-        onClose={() => setProfileModalOpen(false)}
-        onLogout={handleLogout}
-      />
     </div>
   )
 }
