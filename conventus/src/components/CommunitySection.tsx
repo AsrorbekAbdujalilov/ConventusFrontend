@@ -13,7 +13,7 @@ const INITIAL_VOTES: FeatureVote[] = [
   {
     id: 1,
     title: 'Shared review decks for a whole classroom cohort',
-    suggester: '@Jasur_T',
+    suggester: '@lysander_v',
     status: 'Shipped',
     statusClass: 'b-live',
     initialVotes: 48,
@@ -21,7 +21,7 @@ const INITIAL_VOTES: FeatureVote[] = [
   {
     id: 2,
     title: 'Integrated dark mode palettes for late-night sessions',
-    suggester: '@Nilufar_R',
+    suggester: '@zephyr_k',
     status: 'In Progress',
     statusClass: 'b-prog',
     initialVotes: 37,
@@ -29,7 +29,7 @@ const INITIAL_VOTES: FeatureVote[] = [
   {
     id: 3,
     title: 'Import flashcards directly from Anki and CSV spreadsheets',
-    suggester: '@Malika_S',
+    suggester: '@morandi_s',
     status: 'Under Review',
     statusClass: 'b-review',
     initialVotes: 21,
@@ -120,7 +120,7 @@ export function CommunitySection() {
                     border: '1px solid var(--border)',
                   }}
                 >
-                  @Malika_S
+                  @morandi_s
                 </span>
               </p>
               <p style={{ color: 'var(--muted)', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>
@@ -146,7 +146,7 @@ export function CommunitySection() {
                     border: '1px solid var(--border)',
                   }}
                 >
-                  @Jasur_T
+                  @lysander_v
                 </span>
               </p>
               <p style={{ color: 'var(--muted)', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>

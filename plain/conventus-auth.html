@@ -227,7 +227,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:.75rem 1.5rem;justify-content:space
           <li><b>Notes and flashcards</b><span>Write once, review on a schedule.</span></li>
           <li><b>Games and assessments</b><span>Quiz your group, then check the results.</span></li>
         </ul>
-        <p class="credit">Many features here started as <span class="pill-w">@Malika_S</span> and other students' ideas.</p>
+        <p class="credit">Many features here started as <span class="pill-w">@morandi_s</span> and other students' ideas.</p>
       </aside>
 
       <section class="auth-card" aria-labelledby="formTitle">
@@ -238,7 +238,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:.75rem 1.5rem;justify-content:space
 
         <form id="formLogin" class="form" novalidate role="tabpanel" aria-labelledby="tabLogin">
           <div><h2 id="formTitle">Log in to Conventus</h2><p class="sub">Use your email or your @username.</p></div>
-          <div class="field"><label for="l-id">Email or username</label><input class="inp" id="l-id" name="id" autocomplete="username" placeholder="aziza@school.edu"><span class="err" id="l-id-e" aria-live="polite"></span></div>
+          <div class="field"><label for="l-id">Email or username</label><input class="inp" id="l-id" name="id" autocomplete="username" placeholder="soraya@meridian.edu"><span class="err" id="l-id-e" aria-live="polite"></span></div>
           <div class="field"><div class="row"><label for="l-pw">Password</label><a class="link" href="#forgot" id="forgot">Forgot password?</a></div>
             <div class="pw"><input class="inp" id="l-pw" name="password" type="password" autocomplete="current-password" placeholder="Your password"><button type="button" class="show" data-for="l-pw" aria-label="Show password">Show</button></div><span class="err" id="l-pw-e" aria-live="polite"></span></div>
           <label class="check"><input type="checkbox" id="l-rem" checked><span>Keep me signed in on this device</span></label>
@@ -252,10 +252,10 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:.75rem 1.5rem;justify-content:space
         <form id="formRegister" class="form" novalidate role="tabpanel" aria-labelledby="tabRegister" hidden>
           <div><h2>Create your account</h2><p class="sub">Free for students. Takes under a minute.</p></div>
           <div class="two-f">
-            <div class="field"><label for="r-name">Full name</label><input class="inp" id="r-name" name="name" autocomplete="name" placeholder="Aziza Karimova"><span class="err" id="r-name-e" aria-live="polite"></span></div>
-            <div class="field"><label for="r-user">Username</label><div class="at"><span>@</span><input class="inp" id="r-user" name="username" autocomplete="username" placeholder="aziza_k"></div><span class="err" id="r-user-e" aria-live="polite"></span></div>
+            <div class="field"><label for="r-name">Full name</label><input class="inp" id="r-name" name="name" autocomplete="name" placeholder="Soraya Morandi"><span class="err" id="r-name-e" aria-live="polite"></span></div>
+            <div class="field"><label for="r-user">Username</label><div class="at"><span>@</span><input class="inp" id="r-user" name="username" autocomplete="username" placeholder="morandi_s"></div><span class="err" id="r-user-e" aria-live="polite"></span></div>
           </div>
-          <div class="field"><label for="r-email">Email</label><input class="inp" id="r-email" name="email" type="email" autocomplete="email" placeholder="aziza@school.edu"><span class="err" id="r-email-e" aria-live="polite"></span></div>
+          <div class="field"><label for="r-email">Email</label><input class="inp" id="r-email" name="email" type="email" autocomplete="email" placeholder="soraya@meridian.edu"><span class="err" id="r-email-e" aria-live="polite"></span></div>
           <div class="field"><label for="r-pw">Password</label>
             <div class="pw"><input class="inp" id="r-pw" name="password" type="password" autocomplete="new-password" placeholder="At least 8 characters"><button type="button" class="show" data-for="r-pw" aria-label="Show password">Show</button></div>
             <div class="meter" aria-hidden="true"><i></i><i></i><i></i><i></i></div><span class="hintl" id="r-pw-h" aria-live="polite">Use 8 or more characters with letters and numbers.</span><span class="err" id="r-pw-e" aria-live="polite"></span></div>
@@ -308,7 +308,7 @@ const NAV=[
 ];
 const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
 const $=s=>document.querySelector(s);
-const USER={name:'Aziza Karimova',handle:'@aziza_k',streak:12};
+const USER={name:'Soraya Morandi',handle:'@morandi_s',streak:12};
 let authed=false;
 
 function panel(items){return '<div class="panel" role="menu">'+items.map(i=>`<a role="menuitem" href="${i[2]}"><b>${i[0]}</b><small>${i[1]}</small></a>`).join('')+'</div>'}

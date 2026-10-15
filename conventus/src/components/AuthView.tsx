@@ -215,7 +215,7 @@ export function AuthView({
             </li>
           </ul>
           <p className="credit">
-            Many features here started as <span className="pill-w">@Malika_S</span> and other students' ideas.
+            Many features here started as <span className="pill-w">@morandi_s</span> and other students' ideas.
           </p>
         </aside>
 
@@ -259,7 +259,7 @@ export function AuthView({
                   id="l-id"
                   name="id"
                   autoComplete="username"
-                  placeholder="aziza@school.edu"
+                  placeholder="soraya@meridian.edu"
                   value={loginId}
                   onChange={(e) => {
                     setLoginId(e.target.value)
@@ -369,7 +369,7 @@ export function AuthView({
                     id="r-name"
                     name="name"
                     autoComplete="name"
-                    placeholder="Aziza Karimova"
+                    placeholder="Soraya Morandi"
                     value={regName}
                     onChange={(e) => {
                       setRegName(e.target.value)
@@ -393,7 +393,7 @@ export function AuthView({
                       id="r-user"
                       name="username"
                       autoComplete="username"
-                      placeholder="aziza_k"
+                      placeholder="morandi_s"
                       value={regUsername}
                       onChange={(e) => {
                         setRegUsername(e.target.value)
@@ -418,7 +418,7 @@ export function AuthView({
                   name="email"
                   type="email"
                   autoComplete="email"
-                  placeholder="aziza@school.edu"
+                  placeholder="soraya@meridian.edu"
                   value={regEmail}
                   onChange={(e) => {
                     setRegEmail(e.target.value)

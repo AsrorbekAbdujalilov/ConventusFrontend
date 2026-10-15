@@ -194,9 +194,9 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:.75rem 1.5rem;justify-content:space
         <div class="head"><div><h2>Made with you</h2><p>Features that started as someone's idea.</p></div></div>
         <div class="shout">
           <span class="tag" style="font:500 .75rem var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">New this week</span>
-          <p><b>Deep Focus</b> — Suggested &amp; co-created with <span class="pill">@Malika_S</span></p>
+          <p><b>Deep Focus</b> — Suggested &amp; co-created with <span class="pill">@morandi_s</span></p>
           <p style="color:var(--muted);font-size:.9375rem">A distraction-free timer that hides everything except your current card or note.</p>
-          <p><b>Shared review decks</b> — Suggested &amp; co-created with <span class="pill">@Jasur_T</span></p>
+          <p><b>Shared review decks</b> — Suggested &amp; co-created with <span class="pill">@lysander_v</span></p>
         </div>
       </div>
       <div>
@@ -248,7 +248,7 @@ const NAV=[
 ];
 const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
 const $=s=>document.querySelector(s);
-const USER={name:'Aziza Karimova',handle:'@aziza_k',streak:12};
+const USER={name:'Soraya Morandi',handle:'@morandi_s',streak:12};
 let authed=false;
 
 function panel(items){return '<div class="panel" role="menu">'+items.map(i=>`<a role="menuitem" href="${i[2]}"><b>${i[0]}</b><small>${i[1]}</small></a>`).join('')+'</div>'}
@@ -309,7 +309,7 @@ const fc=$('#fc');fc.addEventListener('click',()=>fc.classList.toggle('flip'));
 $('#rate').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$('#rateNote').textContent=b.dataset.m;fc.classList.remove('flip')});
 
 /* Votes (example data) */
-const V=[['Shared review decks for a whole class','@Jasur_T','b-live','Shipped',48],['Dark mode for late-night sessions','@Nilufar_R','b-prog','In progress',37],['Import flashcards from a spreadsheet','@Malika_S','b-review','Under review',21]];
+const V=[['Shared review decks for a whole class','@lysander_v','b-live','Shipped',48],['Dark mode for late-night sessions','@zephyr_k','b-prog','In progress',37],['Import flashcards from a spreadsheet','@morandi_s','b-review','Under review',21]];
 $('#votes').innerHTML=V.map((v,i)=>`<div class="vote"><button class="up" aria-pressed="false" data-i="${i}" aria-label="Upvote"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg><span>${v[4]}</span></button><div style="min-width:0"><h3>${v[0]}</h3><small>Suggested by ${v[1]}</small></div><span class="badge ${v[2]}">${v[3]}</span></div>`).join('');
 $('#votes').addEventListener('click',e=>{const b=e.target.closest('.up');if(!b)return;const on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(on));b.querySelector('span').textContent=V[b.dataset.i][4]+(on?1:0)});
 </script>

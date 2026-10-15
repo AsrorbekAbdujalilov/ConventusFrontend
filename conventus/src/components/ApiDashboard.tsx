@@ -460,7 +460,7 @@ export function ApiDashboard() {
                 required
                 value={regUsername}
                 onChange={(e) => setRegUsername(e.target.value)}
-                placeholder="e.g. alex_rivera"
+                placeholder="e.g. valerius_m"
                 style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-h)', boxSizing: 'border-box' }}
               />
             </div>
@@ -470,7 +470,7 @@ export function ApiDashboard() {
                 type="email"
                 value={regEmail}
                 onChange={(e) => setRegEmail(e.target.value)}
-                placeholder="alex@example.com"
+                placeholder="valerius@meridian.edu"
                 style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-h)', boxSizing: 'border-box' }}
               />
             </div>

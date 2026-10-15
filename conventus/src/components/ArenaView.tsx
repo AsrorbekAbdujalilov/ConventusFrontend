@@ -60,30 +60,7 @@ export function ArenaView({
   const [createTitle, setCreateTitle] = useState('')
   const [createDesc, setCreateDesc] = useState('')
   const [createVisibility, setCreateVisibility] = useState<'public' | 'private'>('public')
-  const [createQuestions, setCreateQuestions] = useState<BulkQuestionInput[]>([
-    {
-      text: 'What is the primary function of mitochondria?',
-      time_seconds: 30,
-      order: 0,
-      choices: [
-        { text: 'Cellular respiration & ATP production', is_correct: true },
-        { text: 'Protein synthesis', is_correct: false },
-        { text: 'DNA replication', is_correct: false },
-        { text: 'Lipid packaging', is_correct: false },
-      ],
-    },
-    {
-      text: 'Which data structure uses LIFO (Last In First Out)?',
-      time_seconds: 20,
-      order: 1,
-      choices: [
-        { text: 'Queue', is_correct: false },
-        { text: 'Stack', is_correct: true },
-        { text: 'Array list', is_correct: false },
-        { text: 'Binary search tree', is_correct: false },
-      ],
-    },
-  ])
+  const [createQuestions, setCreateQuestions] = useState<BulkQuestionInput[]>([])
   const [isCreatingQuiz, setIsCreatingQuiz] = useState(false)
   const [creatorMessage, setCreatorMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
 
@@ -403,14 +380,14 @@ export function ArenaView({
     setCreateQuestions((prev) => [
       ...prev,
       {
-        text: `New Question ${prev.length + 1}`,
+        text: '',
         time_seconds: 30,
         order: prev.length,
         choices: [
-          { text: 'Option A (Correct)', is_correct: true },
-          { text: 'Option B', is_correct: false },
-          { text: 'Option C', is_correct: false },
-          { text: 'Option D', is_correct: false },
+          { text: '', is_correct: true },
+          { text: '', is_correct: false },
+          { text: '', is_correct: false },
+          { text: '', is_correct: false },
         ],
       },
     ])
@@ -539,7 +516,7 @@ export function ArenaView({
               <input
                 id="arenaNameInput"
                 type="text"
-                placeholder="e.g. Alex"
+                placeholder="e.g. Zephyr"
                 value={joinName}
                 onChange={(e) => setJoinName(e.target.value)}
                 className="inp"
@@ -628,8 +605,8 @@ export function ArenaView({
                       setIsHost(true)
                       setMyPlayerName(user?.username || 'Host')
                       setPlayerRoster([
-                        { id: 1, display_name: 'Malika (Student)', points: 0, joined_at: new Date().toISOString() },
-                        { id: 2, display_name: 'Jasur (Bio Club)', points: 0, joined_at: new Date().toISOString() },
+                        { id: 1, display_name: 'Soraya (Scholar)', points: 0, joined_at: new Date().toISOString() },
+                        { id: 2, display_name: 'Lysander (Bio Club)', points: 0, joined_at: new Date().toISOString() },
                       ])
                       setActiveTab('lobby')
                     }
@@ -838,35 +815,56 @@ export function ArenaView({
                 </button>
               </div>
 
-              {createQuestions.map((q, qIndex) => (
-                <div key={qIndex} className="arena-q-edit-box">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <strong style={{ fontSize: '0.9375rem', color: 'var(--primary)' }}>
-                      Question #{qIndex + 1}
-                    </strong>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <label style={{ fontSize: '0.8125rem', color: 'var(--muted)' }}>Timer:</label>
-                      <select
-                        value={q.time_seconds}
-                        onChange={(e) => {
-                          const val = Number(e.target.value)
-                          setCreateQuestions((prev) => {
-                            const updated = [...prev]
-                            updated[qIndex].time_seconds = val
-                            return updated
-                          })
-                        }}
-                        className="inp"
-                        style={{ padding: '0.3rem 0.5rem', width: 'auto', fontSize: '0.8125rem' }}
-                      >
-                        <option value={15}>15 sec</option>
-                        <option value={20}>20 sec</option>
-                        <option value={30}>30 sec</option>
-                        <option value={45}>45 sec</option>
-                        <option value={60}>60 sec</option>
-                      </select>
+              {createQuestions.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: 'center',
+                    padding: '2.5rem 1.5rem',
+                    background: 'var(--surface)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px dashed var(--border)',
+                  }}
+                >
+                  <p style={{ margin: '0 0 1rem', color: 'var(--muted)', fontSize: '0.9375rem' }}>
+                    No questions added yet. Click &ldquo;+ Add Question Card&rdquo; to start building your questions.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    onClick={addQuestionTemplate}
+                  >
+                    + Add Question Card
+                  </button>
+                </div>
+              ) : (
+                createQuestions.map((q, qIndex) => (
+                  <div key={qIndex} className="arena-q-edit-box">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <strong style={{ fontSize: '0.9375rem', color: 'var(--primary)' }}>
+                        Question #{qIndex + 1}
+                      </strong>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <label style={{ fontSize: '0.8125rem', color: 'var(--muted)' }}>Timer:</label>
+                        <select
+                          value={q.time_seconds}
+                          onChange={(e) => {
+                            const val = Number(e.target.value)
+                            setCreateQuestions((prev) => {
+                              const updated = [...prev]
+                              updated[qIndex].time_seconds = val
+                              return updated
+                            })
+                          }}
+                          className="inp"
+                          style={{ padding: '0.3rem 0.5rem', width: 'auto', fontSize: '0.8125rem' }}
+                        >
+                          <option value={15}>15 sec</option>
+                          <option value={20}>20 sec</option>
+                          <option value={30}>30 sec</option>
+                          <option value={45}>45 sec</option>
+                          <option value={60}>60 sec</option>
+                        </select>
 
-                      {createQuestions.length > 1 && (
                         <button
                           type="button"
                           className="btn ghost"
@@ -877,9 +875,8 @@ export function ArenaView({
                         >
                           ✕ Remove
                         </button>
-                      )}
+                      </div>
                     </div>
-                  </div>
 
                   <input
                     type="text"
@@ -947,7 +944,7 @@ export function ArenaView({
                     ))}
                   </div>
                 </div>
-              ))}
+              )))}
             </div>
 
             {creatorMessage && (
@@ -1225,8 +1222,8 @@ export function ArenaView({
                 ? leaderboard
                 : [
                     { display_name: myPlayerName || 'You', points: myScore || 500 },
-                    { display_name: 'Malika (Student)', points: 400 },
-                    { display_name: 'Jasur (Bio Club)', points: 300 },
+                    { display_name: 'Soraya (Scholar)', points: 400 },
+                    { display_name: 'Lysander (Bio Club)', points: 300 },
                   ]
               ).map((entry, idx) => (
                 <tr key={idx} className="arena-score-row">

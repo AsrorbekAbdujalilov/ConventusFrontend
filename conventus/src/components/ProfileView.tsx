@@ -246,7 +246,7 @@ export function ProfileView({
                 className="inp"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                placeholder="e.g. Asrorbek"
+                placeholder="e.g. Lysander"
               />
             </div>
 
@@ -258,7 +258,7 @@ export function ProfileView({
                 className="inp"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                placeholder="e.g. Abdujalilov"
+                placeholder="e.g. Morandi"
               />
             </div>
           </div>
@@ -274,7 +274,7 @@ export function ProfileView({
                 className="inp"
                 value={age}
                 onChange={(e) => setAge(e.target.value)}
-                placeholder="e.g. 19"
+                placeholder="e.g. 20"
               />
             </div>
 
@@ -286,7 +286,7 @@ export function ProfileView({
                 className="inp"
                 value={placeOfWork}
                 onChange={(e) => setPlaceOfWork(e.target.value)}
-                placeholder="e.g. Westminster International University"
+                placeholder="e.g. Meridian Institute of Sciences"
               />
             </div>
           </div>

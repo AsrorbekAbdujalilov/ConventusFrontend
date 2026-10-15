@@ -172,7 +172,7 @@ export function AuthModal({
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="e.g. alex_student"
+              placeholder="e.g. lysander_v"
               style={{
                 width: '100%',
                 padding: '0.6rem 0.8rem',
@@ -194,7 +194,7 @@ export function AuthModal({
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="alex@school.edu"
+                placeholder="lysander@meridian.edu"
                 style={{
                   width: '100%',
                   padding: '0.6rem 0.8rem',
