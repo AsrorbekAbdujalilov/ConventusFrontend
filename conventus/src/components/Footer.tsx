@@ -64,10 +64,10 @@ export function Footer() {
               Study Suites
             </h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-              <li><a href="#feature-classroom" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Classrooms &amp; Cohorts</a></li>
-              <li><a href="#feature-games" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Live Quiz Games</a></li>
-              <li><a href="#feature-notes" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Active Recall Notes</a></li>
-              <li><a href="#feature-assessments" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Assessment Creator &amp; Checker</a></li>
+              <li><a href="/" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Classrooms &amp; Cohorts</a></li>
+              <li><a href="/arena" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Live Quiz Games</a></li>
+              <li><a href="/" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Active Recall Notes</a></li>
+              <li><a href="/" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Assessment Creator &amp; Checker</a></li>
             </ul>
           </div>
 
@@ -77,10 +77,10 @@ export function Footer() {
               Productivity &amp; Prep
             </h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-              <li><a href="#feature-prepare" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Subject Practice Tests</a></li>
-              <li><a href="#feature-prepare" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Exam Study Planner</a></li>
-              <li><a href="#feature-focus" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Deep Focus &amp; Pomodoro</a></li>
-              <li><a href="#feature-focus" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Ambient Study Sounds</a></li>
+              <li><a href="/" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Subject Practice Tests</a></li>
+              <li><a href="/" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Exam Study Planner</a></li>
+              <li><a href="/" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Deep Focus &amp; Pomodoro</a></li>
+              <li><a href="/" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Ambient Study Sounds</a></li>
             </ul>
           </div>
 
@@ -93,7 +93,7 @@ export function Footer() {
               Have an idea for a feature or study deck? Suggest and vote on what ships next.
             </p>
             <a
-              href="#community-votes"
+              href="/"
               style={{
                 fontFamily: 'var(--f-mono)',
                 fontSize: '0.8125rem',
@@ -123,7 +123,16 @@ export function Footer() {
             © {new Date().getFullYear()} Conventus. Built with students, for students.
           </span>
           <div style={{ display: 'flex', gap: '1.25rem' }}>
-            <a href="#top" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Back to top ↑</a>
+            <a
+              href="/"
+              onClick={(e) => {
+                e.preventDefault()
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+              }}
+              style={{ color: 'var(--muted)', textDecoration: 'none' }}
+            >
+              Back to top ↑
+            </a>
           </div>
         </div>
       </div>

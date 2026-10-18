@@ -88,8 +88,9 @@ export const arenaApi = {
   },
 
   // --- In-Game Operations ---
-  getGameStatus: async (code: string): Promise<GameStatusResponse> => {
-    return apiClient<GameStatusResponse>(`/api/arena/game/${code}/status/`)
+  getGameStatus: async (code: string, token?: string): Promise<GameStatusResponse> => {
+    const query = token ? `?token=${encodeURIComponent(token)}` : ''
+    return apiClient<GameStatusResponse>(`/api/arena/game/${code}/status/${query}`)
   },
 
   getGamePlayers: async (code: string): Promise<Player[]> => {
@@ -107,8 +108,9 @@ export const arenaApi = {
     })
   },
 
-  getLeaderboard: async (code: string): Promise<LeaderboardResponse> => {
-    return apiClient<LeaderboardResponse>(`/api/arena/game/${code}/leaderboard/`)
+  getLeaderboard: async (code: string, token?: string): Promise<LeaderboardResponse> => {
+    const query = token ? `?token=${encodeURIComponent(token)}` : ''
+    return apiClient<LeaderboardResponse>(`/api/arena/game/${code}/leaderboard/${query}`)
   },
 }
 

@@ -41,21 +41,6 @@ export function AuthView({
   const [regNote, setRegNote] = useState<{ text: string; type: 'info' | 'error' | 'success' } | null>(null)
   const [regLoading, setRegLoading] = useState(false)
 
-  // Sync mode with hash changes
-  useEffect(() => {
-    function handleHash() {
-      const hash = window.location.hash
-      if (hash === '#register') {
-        setMode('register')
-      } else if (hash === '#login') {
-        setMode('login')
-      }
-    }
-    handleHash()
-    window.addEventListener('hashchange', handleHash)
-    return () => window.removeEventListener('hashchange', handleHash)
-  }, [])
-
   useEffect(() => {
     document.title = mode === 'register' ? 'Conventus Register' : 'Conventus Log In'
   }, [mode])
@@ -81,7 +66,6 @@ export function AuthView({
 
   const switchMode = (newMode: 'login' | 'register') => {
     setMode(newMode)
-    window.location.hash = newMode === 'register' ? 'register' : 'login'
     setLoginNote(null)
     setRegNote(null)
     setLoginErrors({})
@@ -277,9 +261,14 @@ export function AuthView({
               <div className="field">
                 <div className="row">
                   <label htmlFor="l-pw">Password</label>
-                  <a className="link" href="#forgot" onClick={(e) => e.preventDefault()}>
+                  <button
+                    type="button"
+                    className="link"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                    onClick={() => setLoginNote({ text: 'Please contact support or sign in with your username/email credentials.', type: 'info' })}
+                  >
                     Forgot password?
-                  </a>
+                  </button>
                 </div>
                 <div className="pw">
                   <input
@@ -335,16 +324,14 @@ export function AuthView({
 
               <p className="switch">
                 New to Conventus?{' '}
-                <a
+                <button
+                  type="button"
                   className="link"
-                  href="#register"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    switchMode('register')
-                  }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                  onClick={() => switchMode('register')}
                 >
                   Create an account
-                </a>
+                </button>
               </p>
 
               {loginNote && (
@@ -510,8 +497,7 @@ export function AuthView({
                   }}
                 />
                 <span>
-                  I agree to the <a className="link" href="#terms" onClick={(e) => e.preventDefault()}>Terms</a> and{' '}
-                  <a className="link" href="#privacy" onClick={(e) => e.preventDefault()}>Privacy Policy</a>
+                  I agree to the Terms and Privacy Policy
                 </span>
               </label>
               {regErrors.terms && (
@@ -538,16 +524,14 @@ export function AuthView({
 
               <p className="switch">
                 Already have an account?{' '}
-                <a
+                <button
+                  type="button"
                   className="link"
-                  href="#login"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    switchMode('login')
-                  }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                  onClick={() => switchMode('login')}
                 >
                   Log in
-                </a>
+                </button>
               </p>
 
               {regNote && (

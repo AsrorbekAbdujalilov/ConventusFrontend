@@ -15,56 +15,56 @@ export const NAV_ITEMS = [
     key: 'classroom',
     title: 'Classroom',
     items: [
-      { title: 'Open classroom', desc: 'Start a room for your class or study group', href: '#feature-classroom' },
-      { title: 'Join classroom', desc: 'Enter with a code from your teacher', href: '#feature-classroom' },
-      { title: 'Discover', desc: 'Browse public classrooms', href: '#feature-classroom' },
+      { title: 'Open classroom', desc: 'Start a room for your class or study group', href: '/' },
+      { title: 'Join classroom', desc: 'Enter with a code from your teacher', href: '/' },
+      { title: 'Discover', desc: 'Browse public classrooms', href: '/' },
     ],
   },
   {
     key: 'games',
     title: 'Games',
     items: [
-      { title: 'Create game', desc: 'Turn a deck into a live quiz game', href: '#games-create' },
-      { title: 'Join lobby', desc: 'Jump into a game with a PIN', href: '#games-lobby' },
-      { title: 'Library', desc: 'Games you and others have made', href: '#games-library' },
+      { title: 'Create game', desc: 'Turn a deck into a live quiz game', href: '/arena?tab=create' },
+      { title: 'Join lobby', desc: 'Jump into a game with a PIN', href: '/arena' },
+      { title: 'Library', desc: 'Games you and others have made', href: '/arena?tab=decks' },
     ],
   },
   {
     key: 'notes',
     title: 'Notes',
     items: [
-      { title: 'My notes', desc: 'Everything you have written', href: '#feature-notes' },
-      { title: 'Review', desc: 'Turn notes into flashcards and recall prompts', href: '#feature-notes' },
-      { title: 'Discover', desc: 'Notes shared by the community', href: '#feature-notes' },
+      { title: 'My notes', desc: 'Everything you have written', href: '/' },
+      { title: 'Review', desc: 'Turn notes into flashcards and recall prompts', href: '/' },
+      { title: 'Discover', desc: 'Notes shared by the community', href: '/' },
     ],
   },
   {
     key: 'assessments',
     title: 'Assessments',
     items: [
-      { title: 'Create assessment', desc: 'Build a quiz or exam with custom rubrics', href: '#feature-assessments' },
-      { title: 'Assessment checker', desc: 'Upload answers and get automated grading', href: '#feature-assessments' },
-      { title: 'My assessments', desc: 'Drafts, published papers, and tests', href: '#feature-assessments' },
-      { title: 'Library & question banks', desc: 'Reusable question banks & templates', href: '#feature-assessments' },
-      { title: 'History & progress', desc: 'Analytics and student improvement curves', href: '#feature-assessments' },
+      { title: 'Create assessment', desc: 'Build a quiz or exam with custom rubrics', href: '/' },
+      { title: 'Assessment checker', desc: 'Upload answers and get automated grading', href: '/' },
+      { title: 'My assessments', desc: 'Drafts, published papers, and tests', href: '/' },
+      { title: 'Library & question banks', desc: 'Reusable question banks & templates', href: '/' },
+      { title: 'History & progress', desc: 'Analytics and student improvement curves', href: '/' },
     ],
   },
   {
     key: 'prepare',
     title: 'Prepare',
     items: [
-      { title: 'Direct chat', desc: 'Ask questions about your material', href: '#feature-prepare' },
-      { title: 'Tests', desc: 'Practice tests by subject', href: '#feature-prepare' },
-      { title: 'Study plan', desc: 'A schedule that works back from your exam', href: '#feature-prepare' },
+      { title: 'Direct chat', desc: 'Ask questions about your material', href: '/' },
+      { title: 'Tests', desc: 'Practice tests by subject', href: '/' },
+      { title: 'Study plan', desc: 'A schedule that works back from your exam', href: '/' },
     ],
   },
   {
     key: 'focus',
     title: 'Focus',
     items: [
-      { title: 'Focus', desc: 'Pomodoro timer with your task list', href: '#feature-focus' },
-      { title: 'Deep Focus', desc: 'Full-screen, nothing else on the page', href: '#feature-focus' },
-      { title: 'Ambient sounds', desc: 'Rain, cafe and white noise', href: '#feature-focus' },
+      { title: 'Focus', desc: 'Pomodoro timer with your task list', href: '/' },
+      { title: 'Deep Focus', desc: 'Full-screen, nothing else on the page', href: '/' },
+      { title: 'Ambient sounds', desc: 'Rain, cafe and white noise', href: '/' },
     ],
   },
 ]
@@ -140,7 +140,7 @@ export function Navbar({
       <div className="wrap" style={{ height: '4rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
         {/* Left: Logo & Wordmark */}
         <a
-          href="#top"
+          href="/"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -397,7 +397,7 @@ export function Navbar({
                     </button>
                     <a
                       role="menuitem"
-                      href="#feature-classroom"
+                      href="/"
                       onClick={() => setUserMenuOpen(false)}
                       style={{
                         display: 'block',

@@ -7,6 +7,7 @@ export interface ProfileViewProps {
   onProfileUpdated: (updatedUser: UserProfile) => void
   onBackToHome: () => void
   onLogout: () => void
+  onRequireLogin?: () => void
 }
 
 export function ProfileView({
@@ -14,6 +15,7 @@ export function ProfileView({
   onProfileUpdated,
   onBackToHome,
   onLogout,
+  onRequireLogin,
 }: ProfileViewProps) {
   // Form fields
   const [username, setUsername] = useState(user?.username || '')
@@ -54,8 +56,10 @@ export function ProfileView({
     }
   }, [user])
 
-  // Load latest profile & subjects from backend
+  // Load latest profile & subjects from backend (only if user is authenticated)
   useEffect(() => {
+    if (!user) return
+
     authApi.getSubjects()
       .then((subs) => setAvailableSubjects(subs))
       .catch(() => {
@@ -79,7 +83,7 @@ export function ProfileView({
       .catch(() => {
         // user might need to log in
       })
-  }, [onProfileUpdated])
+  }, [user, onProfileUpdated])
 
   const toggleSubject = (subId: number) => {
     setSelectedSubjectIds((prev) =>
@@ -138,6 +142,56 @@ export function ProfileView({
     if (firstName && lastName) return `${firstName[0]}${lastName[0]}`.toUpperCase()
     if (username) return username.slice(0, 2).toUpperCase()
     return 'U'
+  }
+
+  // --- ACCESS GUARD: Unauthenticated users are strictly barred from accessing profile page ---
+  if (!user) {
+    return (
+      <div className="profile-container wrap">
+        <div style={{ maxWidth: '540px', margin: '4rem auto 2rem', textAlign: 'center' }}>
+          <div
+            style={{
+              width: '68px',
+              height: '68px',
+              borderRadius: '50%',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1.5rem',
+              color: 'var(--primary)',
+            }}
+          >
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+          <span className="profile-badge-tier" style={{ margin: '0 auto 0.75rem' }}>Protected Route</span>
+          <h1 style={{ fontSize: '1.875rem', fontWeight: 700, margin: '0 0 0.5rem' }}>Authentication Required</h1>
+          <p style={{ color: 'var(--muted)', fontSize: '0.9375rem', lineHeight: 1.6, margin: '0 0 2rem' }}>
+            Profile settings, enrolled study subjects, and account preferences require an active Conventus account. Please log in or create an account to view and manage your profile.
+          </p>
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="btn primary big"
+              onClick={onRequireLogin || onBackToHome}
+            >
+              Log in to Conventus →
+            </button>
+            <button
+              type="button"
+              className="btn line big"
+              onClick={onBackToHome}
+            >
+              Return to Home
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

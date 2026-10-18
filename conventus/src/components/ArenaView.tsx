@@ -75,8 +75,14 @@ export function ArenaView({
     }
   }, [initialTab])
 
-  // Load Decks (Discover & My Quizzes)
+  // Load Decks (Discover & My Quizzes) — only query backend if authenticated
   const fetchDecks = useCallback(async () => {
+    if (!user) {
+      setDiscoverQuizzes([])
+      setMyQuizzes([])
+      return
+    }
+
     setIsLoadingDecks(true)
     try {
       const publicList = await arenaApi.getDiscoverQuizzes()
@@ -85,13 +91,11 @@ export function ArenaView({
       // ignore
     }
 
-    if (user) {
-      try {
-        const myList = await arenaApi.getMyQuizzes()
-        setMyQuizzes(myList)
-      } catch {
-        // ignore
-      }
+    try {
+      const myList = await arenaApi.getMyQuizzes()
+      setMyQuizzes(myList)
+    } catch {
+      // ignore
     }
     setIsLoadingDecks(false)
   }, [user])
@@ -133,10 +137,10 @@ export function ArenaView({
     })
     wsCleanupRef.current = cleanup
 
-    // Fallback polling for roster & status
+    // Fallback polling for roster & status (passes playerToken if guest player)
     const pollInterval = window.setInterval(async () => {
       try {
-        const status = await arenaApi.getGameStatus(currentGameCode)
+        const status = await arenaApi.getGameStatus(currentGameCode, playerToken || undefined)
         if (status.is_started && !gameStarted) {
           setGameStarted(true)
           setActiveTab('play')
@@ -151,7 +155,7 @@ export function ArenaView({
           setPlayerRoster(players)
         }
 
-        const lb = await arenaApi.getLeaderboard(currentGameCode)
+        const lb = await arenaApi.getLeaderboard(currentGameCode, playerToken || undefined)
         if (lb && lb.leaderboard) {
           setLeaderboard(lb.leaderboard)
         }
@@ -577,74 +581,60 @@ export function ArenaView({
             )}
           </div>
 
-          <div className="arena-deck-grid">
-            {/* Built-in Instant Demo Deck */}
-            <div className="arena-deck-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <span className="badge b-live">Ready to Host</span>
-                <span style={{ fontFamily: 'var(--f-mono)', fontSize: '0.8125rem', color: 'var(--muted)' }}>
-                  Biology &amp; Systems
-                </span>
-              </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Cellular Respiration &amp; Bioenergetics</h3>
-              <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.875rem' }}>
-                Covers mitochondria, glycolysis, ATP synthase, and the citric acid cycle.
+          {!user ? (
+            <div style={{ textAlign: 'center', padding: '3.5rem 1.5rem', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 600, margin: '0 0 0.5rem' }}>Authentication Required to Host Matches</h3>
+              <p style={{ color: 'var(--muted)', margin: '0 0 1.5rem', maxWidth: '28rem', marginInline: 'auto' }}>
+                Hosting live quiz games requires an authenticated account to control session lobby, manage timers, and sync questions.
               </p>
-              <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.75rem' }}>
-                <span style={{ fontSize: '0.8125rem', color: 'var(--muted)' }}>5 Questions · 30s</span>
-                <button
-                  type="button"
-                  className="btn orange"
-                  onClick={() => {
-                    // If backend is populated, host via API; otherwise provide instant PIN
-                    if (discoverQuizzes.length > 0) {
-                      handleHostLaunch(discoverQuizzes[0].id)
-                    } else {
-                      const dummyCode = String(Math.floor(100000 + Math.random() * 900000))
-                      setCurrentGameCode(dummyCode)
-                      setIsHost(true)
-                      setMyPlayerName(user?.username || 'Host')
-                      setPlayerRoster([
-                        { id: 1, display_name: 'Soraya (Scholar)', points: 0, joined_at: new Date().toISOString() },
-                        { id: 2, display_name: 'Lysander (Bio Club)', points: 0, joined_at: new Date().toISOString() },
-                      ])
-                      setActiveTab('lobby')
-                    }
-                  }}
-                >
-                  Launch Live Game →
-                </button>
-              </div>
+              <button type="button" className="btn primary big" onClick={onRequireLogin}>
+                Log in to Conventus →
+              </button>
             </div>
-
-            {/* Dynamic Discover Decks */}
-            {discoverQuizzes.map((quiz) => (
-              <div key={quiz.id} className="arena-deck-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <span className="badge b-review">{quiz.visibility}</span>
-                  <span style={{ fontFamily: 'var(--f-mono)', fontSize: '0.8125rem', color: 'var(--muted)' }}>
-                    by {quiz.owner || 'Community'}
-                  </span>
+          ) : (
+            <div className="arena-deck-grid">
+              {[...myQuizzes, ...discoverQuizzes.filter((d) => !myQuizzes.some((m) => m.id === d.id))].map((quiz) => (
+                <div key={quiz.id} className="arena-deck-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <span className="badge b-live">{quiz.visibility}</span>
+                    <span style={{ fontFamily: 'var(--f-mono)', fontSize: '0.8125rem', color: 'var(--muted)' }}>
+                      {quiz.owner === user.username ? 'My Deck' : `by ${quiz.owner}`}
+                    </span>
+                  </div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{quiz.title}</h3>
+                  <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.875rem' }}>
+                    {quiz.description || 'Comprehensive review questions for study groups.'}
+                  </p>
+                  <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.75rem' }}>
+                    <span style={{ fontSize: '0.8125rem', color: 'var(--muted)' }}>
+                      {quiz.question_count || 0} Questions
+                    </span>
+                    <button
+                      type="button"
+                      className="btn primary"
+                      onClick={() => handleHostLaunch(quiz.id)}
+                    >
+                      Host Deck →
+                    </button>
+                  </div>
                 </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{quiz.title}</h3>
-                <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.875rem' }}>
-                  {quiz.description || 'Comprehensive review questions for study groups.'}
-                </p>
-                <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.75rem' }}>
-                  <span style={{ fontSize: '0.8125rem', color: 'var(--muted)' }}>
-                    {quiz.question_count || 0} Questions
-                  </span>
+              ))}
+              {myQuizzes.length === 0 && discoverQuizzes.length === 0 && (
+                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', background: 'var(--surface)', borderRadius: 'var(--radius-lg)' }}>
+                  <p style={{ color: 'var(--muted)', margin: '0 0 1rem' }}>
+                    No quiz decks available yet. Create your first deck in the Deck Creator to host a live match!
+                  </p>
                   <button
                     type="button"
                     className="btn primary"
-                    onClick={() => handleHostLaunch(quiz.id)}
+                    onClick={() => setActiveTab('create')}
                   >
-                    Host Deck →
+                    + Create New Deck
                   </button>
                 </div>
-              </div>
-            ))}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -1183,10 +1173,10 @@ export function ArenaView({
             {/* 2nd Place */}
             <div className="arena-podium-col">
               <span style={{ fontWeight: 600, fontSize: '0.9375rem' }}>
-                {leaderboard[1]?.display_name || 'Player 2'}
+                {leaderboard[1]?.display_name || '—'}
               </span>
               <span style={{ fontSize: '0.8125rem', color: 'var(--muted)', fontFamily: 'var(--f-mono)' }}>
-                {leaderboard[1]?.points || 300} pts
+                {leaderboard[1] ? `${leaderboard[1].points} pts` : '—'}
               </span>
               <div className="arena-podium-box podium-second">2</div>
             </div>
@@ -1198,7 +1188,7 @@ export function ArenaView({
                 {leaderboard[0]?.display_name || myPlayerName || 'Champion'}
               </span>
               <span style={{ fontSize: '0.875rem', fontWeight: 600, fontFamily: 'var(--f-mono)' }}>
-                {leaderboard[0]?.points || Math.max(myScore, 500)} pts
+                {leaderboard[0] ? `${leaderboard[0].points} pts` : `${myScore} pts`}
               </span>
               <div className="arena-podium-box podium-first">1</div>
             </div>
@@ -1206,10 +1196,10 @@ export function ArenaView({
             {/* 3rd Place */}
             <div className="arena-podium-col">
               <span style={{ fontWeight: 600, fontSize: '0.9375rem' }}>
-                {leaderboard[2]?.display_name || 'Player 3'}
+                {leaderboard[2]?.display_name || '—'}
               </span>
               <span style={{ fontSize: '0.8125rem', color: 'var(--muted)', fontFamily: 'var(--f-mono)' }}>
-                {leaderboard[2]?.points || 200} pts
+                {leaderboard[2] ? `${leaderboard[2].points} pts` : '—'}
               </span>
               <div className="arena-podium-box podium-third">3</div>
             </div>
@@ -1220,11 +1210,9 @@ export function ArenaView({
             <tbody>
               {(leaderboard.length > 0
                 ? leaderboard
-                : [
-                    { display_name: myPlayerName || 'You', points: myScore || 500 },
-                    { display_name: 'Soraya (Scholar)', points: 400 },
-                    { display_name: 'Lysander (Bio Club)', points: 300 },
-                  ]
+                : myPlayerName
+                ? [{ display_name: myPlayerName, points: myScore }]
+                : []
               ).map((entry, idx) => (
                 <tr key={idx} className="arena-score-row">
                   <td style={{ width: '3rem' }}>#{idx + 1}</td>

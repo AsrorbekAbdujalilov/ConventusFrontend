@@ -83,24 +83,25 @@ export function HeroSection({ onStartClick }: HeroSectionProps) {
 
         {/* CTA Buttons */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
-          <a
+          <button
+            type="button"
             className="btn primary"
-            href="#features"
             onClick={onStartClick}
-            style={{ padding: '0.75rem 1.4rem', fontSize: '1rem' }}
+            style={{ padding: '0.75rem 1.4rem', fontSize: '1rem', cursor: 'pointer' }}
           >
             Explore Study Tools ↓
-          </a>
-          <a
+          </button>
+          <button
+            type="button"
             className="btn line"
-            href="#feature-classroom"
-            style={{ padding: '0.75rem 1.4rem', fontSize: '1rem' }}
+            onClick={onStartClick}
+            style={{ padding: '0.75rem 1.4rem', fontSize: '1rem', cursor: 'pointer' }}
           >
             Join a Classroom
-          </a>
+          </button>
           <a
             className="btn orange"
-            href="#games-lobby"
+            href="/arena"
             style={{ padding: '0.75rem 1.4rem', fontSize: '1rem' }}
           >
             Join a Game Lobby
