@@ -24,9 +24,10 @@ export const NAV_ITEMS = [
     key: 'games',
     title: 'Games',
     items: [
-      { title: 'Create game', desc: 'Turn a deck into a live quiz game', href: '/arena?tab=create' },
-      { title: 'Join lobby', desc: 'Jump into a game with a PIN', href: '/arena' },
-      { title: 'Library', desc: 'Games you and others have made', href: '/arena?tab=decks' },
+      { title: 'Join lobby', desc: 'Jump into a game with a PIN', href: '/arena?tab=join' },
+      { title: 'Host match', desc: 'Launch a multiplayer session from your library', href: '/arena?tab=host' },
+      { title: 'Deck creator', desc: 'Create questions & multiple choices', href: '/arena?tab=create' },
+      { title: 'Deck library', desc: 'Browse your decks and community decks', href: '/arena?tab=decks' },
     ],
   },
   {

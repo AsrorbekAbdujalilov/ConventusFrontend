@@ -24,6 +24,7 @@ export interface UserProfile {
   grade?: GradeChoice | string;
   subscription?: SubscriptionChoice | string;
   subjects: Subject[];
+  active_palette_id?: string;
 }
 
 export interface UserProfileUpdatePayload {
@@ -38,6 +39,42 @@ export interface UserProfileUpdatePayload {
   subscription?: SubscriptionChoice | string;
   subjects?: number[];
   password?: string;
+  active_palette_id?: string;
+}
+
+// ──────────────────────────────────────────────
+// USER PALETTE (custom theme stored in DB)
+// ──────────────────────────────────────────────
+
+export interface UserPaletteDB {
+  id: number;
+  name: string;
+  category: 'light' | 'dark';
+  color_primary: string;
+  color_secondary: string;
+  color_accent: string;
+  color_fourth: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreatePalettePayload {
+  name: string;
+  category: 'light' | 'dark';
+  color_primary: string;
+  color_secondary: string;
+  color_accent: string;
+  color_fourth?: string;
+}
+
+export interface SetActivePaletteResponse {
+  message: string;
+  active_palette_id: string;
+}
+
+export interface DeletePaletteResponse {
+  message: string;
+  reset_to: string;
 }
 
 export interface UserProfileUpdateResponse {

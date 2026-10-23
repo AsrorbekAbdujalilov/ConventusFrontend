@@ -116,7 +116,12 @@ export async function apiClient<T>(
         message = JSON.stringify(responseData)
       }
     } else if (typeof responseData === 'string' && responseData.trim()) {
-      message = responseData
+      if (responseData.includes('<!DOCTYPE') || responseData.includes('<html')) {
+        const titleMatch = responseData.match(/<title>(.*?)<\/title>/i)
+        message = titleMatch ? titleMatch[1].trim() : 'Server error'
+      } else {
+        message = responseData
+      }
     }
     throw new ApiError(response.status, message, responseData)
   }

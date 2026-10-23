@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { arenaApi, connectArenaWebSocket } from '../api'
 import type {
   Quiz,
@@ -12,6 +13,7 @@ import type {
 export interface ArenaViewProps {
   user: UserProfile | null
   initialTab?: 'join' | 'host' | 'decks' | 'create'
+  initialEditQuizId?: string
   onRequireLogin?: () => void
   onBackToHome?: () => void
 }
@@ -19,11 +21,26 @@ export interface ArenaViewProps {
 export function ArenaView({
   user,
   initialTab = 'join',
+  initialEditQuizId,
   onRequireLogin,
   onBackToHome,
 }: ArenaViewProps) {
+  const navigate = useNavigate()
+
   // Navigation / View State
   const [activeTab, setActiveTab] = useState<'join' | 'host' | 'decks' | 'create' | 'lobby' | 'play' | 'podium'>(initialTab)
+
+  // Editing existing deck state
+  const [editingQuizId, setEditingQuizId] = useState<string | null>(null)
+  const [isDeletingQuiz, setIsDeletingQuiz] = useState(false)
+
+  // Host Match Quick Update State
+  const [quickUpdateQuiz, setQuickUpdateQuiz] = useState<Quiz | null>(null)
+  const [quickUpdateTitle, setQuickUpdateTitle] = useState('')
+  const [quickUpdateDesc, setQuickUpdateDesc] = useState('')
+  const [quickUpdateVisibility, setQuickUpdateVisibility] = useState<'public' | 'private'>('public')
+  const [isQuickUpdating, setIsQuickUpdating] = useState(false)
+  const [quickUpdateMsg, setQuickUpdateMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
 
   // Join State
   const [joinPin, setJoinPin] = useState('')
@@ -244,6 +261,12 @@ export function ArenaView({
       return
     }
 
+    // Host guard: Host cannot join their own game as a player
+    if (user && isHost && currentGameCode === cleanCode) {
+      setJoinError('The host cannot join their own game as a player.')
+      return
+    }
+
     setIsJoining(true)
     try {
       const res = await arenaApi.joinGame({ code: cleanCode, display_name: cleanName })
@@ -251,7 +274,10 @@ export function ArenaView({
       setPlayerToken(res.token)
       setMyPlayerName(res.display_name)
       setIsHost(false)
-      setActiveTab('lobby')
+      // Redirect player to full-focus live game page
+      navigate(`/arena/live/${cleanCode}`, {
+        state: { isHost: false, gameCode: cleanCode, token: res.token, displayName: res.display_name },
+      })
     } catch (err: unknown) {
       const msg = (err as Error)?.message || 'Failed to join game. Check PIN code.'
       setJoinError(msg)
@@ -272,15 +298,10 @@ export function ArenaView({
       setIsHost(true)
       setMyPlayerName(user.username)
 
-      // Also join as host player so host can participate if desired
-      try {
-        const joinRes = await arenaApi.joinGame({ code: res.code, display_name: `${user.username} (Host)` })
-        setPlayerToken(joinRes.token)
-      } catch {
-        // Host might already be joined or play separately
-      }
-
-      setActiveTab('lobby')
+      // Redirect host to full-focus live game room
+      navigate(`/arena/live/${res.code}`, {
+        state: { isHost: true, gameCode: res.code },
+      })
     } catch (err: unknown) {
       alert((err as Error)?.message || 'Could not launch game session.')
     }
@@ -343,8 +364,42 @@ export function ArenaView({
     handleQuestionTimeout()
   }
 
-  const handleSaveNewQuiz = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleStartNewDeck = () => {
+    setEditingQuizId(null)
+    setCreateTitle('')
+    setCreateDesc('')
+    setCreateVisibility('public')
+    setCreateQuestions([])
+    setCreatorMessage(null)
+  }
+
+  const handleLoadQuizForEdit = async (quizId: string) => {
+    try {
+      const quiz = await arenaApi.getQuizDetail(quizId)
+      setEditingQuizId(quiz.id)
+      setCreateTitle(quiz.title)
+      setCreateDesc(quiz.description || '')
+      setCreateVisibility(quiz.visibility)
+      setCreateQuestions(
+        (quiz.questions || []).map((q) => ({
+          text: q.text,
+          time_seconds: q.time_seconds,
+          order: q.order,
+          choices: (q.choices || []).map((ch) => ({
+            text: ch.text,
+            is_correct: Boolean(ch.is_correct),
+          })),
+        }))
+      )
+      setCreatorMessage({ type: 'ok', text: `Loaded "${quiz.title}" for editing.` })
+      handleSelectTab('create')
+    } catch (err: unknown) {
+      setCreatorMessage({ type: 'err', text: (err as Error)?.message || 'Could not load quiz.' })
+    }
+  }
+
+  const handleSaveOrUpdateQuiz = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     if (!user) {
       if (onRequireLogin) onRequireLogin()
       return
@@ -359,24 +414,141 @@ export function ArenaView({
     setCreatorMessage(null)
 
     try {
+      if (editingQuizId) {
+        // UPDATE existing deck
+        await arenaApi.updateQuiz(editingQuizId, {
+          title: createTitle.trim(),
+          description: createDesc.trim(),
+          visibility: createVisibility,
+        })
+        if (createQuestions.length > 0) {
+          await arenaApi.saveQuestions(editingQuizId, createQuestions)
+        }
+        setCreatorMessage({
+          type: 'ok',
+          text: `Deck "${createTitle.trim()}" updated successfully with ${createQuestions.length} questions!`,
+        })
+        fetchDecks()
+      } else {
+        // CREATE new deck
+        const newQuiz = await arenaApi.createQuiz({
+          title: createTitle.trim(),
+          description: createDesc.trim(),
+          visibility: createVisibility,
+        })
+
+        if (createQuestions.length > 0) {
+          await arenaApi.saveQuestions(newQuiz.id, createQuestions)
+        }
+
+        setEditingQuizId(newQuiz.id)
+        setCreatorMessage({
+          type: 'ok',
+          text: `Deck "${newQuiz.title}" created successfully with ${createQuestions.length} questions!`,
+        })
+        fetchDecks()
+      }
+    } catch (err: unknown) {
+      setCreatorMessage({ type: 'err', text: (err as Error)?.message || 'Failed to save quiz.' })
+    } finally {
+      setIsCreatingQuiz(false)
+    }
+  }
+
+  const handleDeleteQuiz = async (quizId?: string) => {
+    const targetId = quizId || editingQuizId
+    if (!targetId) return
+
+    if (!window.confirm('Are you sure you want to delete this deck? This action cannot be undone.')) {
+      return
+    }
+
+    setIsDeletingQuiz(true)
+    try {
+      await arenaApi.deleteQuiz(targetId)
+      if (targetId === editingQuizId) {
+        handleStartNewDeck()
+      }
+      setCreatorMessage({ type: 'ok', text: 'Deck deleted successfully.' })
+      fetchDecks()
+    } catch (err: unknown) {
+      setCreatorMessage({ type: 'err', text: (err as Error)?.message || 'Failed to delete deck.' })
+    } finally {
+      setIsDeletingQuiz(false)
+    }
+  }
+
+  // Quick Update from Host Match
+  const handleApplyQuickUpdate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!quickUpdateQuiz || !quickUpdateTitle.trim()) return
+    setIsQuickUpdating(true)
+    setQuickUpdateMsg(null)
+    try {
+      await arenaApi.updateQuiz(quickUpdateQuiz.id, {
+        title: quickUpdateTitle.trim(),
+        description: quickUpdateDesc.trim(),
+        visibility: quickUpdateVisibility,
+      })
+      await fetchDecks()
+      setQuickUpdateQuiz(null)
+    } catch (err: unknown) {
+      setQuickUpdateMsg({ type: 'err', text: (err as Error)?.message || 'Failed to update deck.' })
+    } finally {
+      setIsQuickUpdating(false)
+    }
+  }
+
+  // Handle initial edit quiz id from URL or props
+  useEffect(() => {
+    if (initialEditQuizId) {
+      handleLoadQuizForEdit(initialEditQuizId)
+    }
+  }, [initialEditQuizId])
+
+  const handleHostFromCreator = async () => {
+    if (!user) {
+      if (onRequireLogin) onRequireLogin()
+      return
+    }
+
+    if (editingQuizId) {
+      handleHostLaunch(editingQuizId)
+      return
+    }
+
+    if (!createTitle.trim()) {
+      setCreatorMessage({ type: 'err', text: 'Please enter a deck title before hosting.' })
+      return
+    }
+
+    setIsCreatingQuiz(true)
+    try {
       const newQuiz = await arenaApi.createQuiz({
         title: createTitle.trim(),
         description: createDesc.trim(),
         visibility: createVisibility,
       })
-
       if (createQuestions.length > 0) {
         await arenaApi.saveQuestions(newQuiz.id, createQuestions)
       }
-
-      setCreatorMessage({ type: 'ok', text: `Deck "${newQuiz.title}" created successfully with ${createQuestions.length} questions!` })
-      setCreateTitle('')
-      setCreateDesc('')
       fetchDecks()
+      handleHostLaunch(newQuiz.id)
     } catch (err: unknown) {
-      setCreatorMessage({ type: 'err', text: (err as Error)?.message || 'Failed to save quiz.' })
+      setCreatorMessage({ type: 'err', text: (err as Error)?.message || 'Failed to prepare deck for hosting.' })
     } finally {
       setIsCreatingQuiz(false)
+    }
+  }
+
+  const handleSelectTab = (tab: 'join' | 'host' | 'decks' | 'create') => {
+    setActiveTab(tab)
+    try {
+      const url = new URL(window.location.href)
+      url.searchParams.set('tab', tab)
+      window.history.replaceState(null, '', url.pathname + url.search)
+    } catch {
+      // ignore
     }
   }
 
@@ -398,92 +570,149 @@ export function ArenaView({
   }
 
   return (
-    <div className="arena-wrapper wrap">
-      {/* 1. Header & Context */}
-      <div className="arena-hero">
-        <span className="arena-eyebrow">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-          </svg>
-          Conventus Arena · Live Multiplayer
-        </span>
-        <h1 className="arena-title">Multiplayer Review &amp; Live Quiz Arena</h1>
-        <p className="arena-desc">
-          Gamify your flashcard review decks. Compete live with classmates, test your recall under timed pressure, and follow live leaderboards.
-        </p>
-      </div>
+    <div className="arena-studio-layout">
+      {/* 1. Left Sidebar Navigation */}
+      <aside className="arena-sidebar">
+        <div className="arena-sidebar-brand">
+          <span className="arena-sidebar-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+            Conventus Arena
+          </span>
+          <h2 className="arena-sidebar-heading">Live Quiz Studio</h2>
+        </div>
 
-      {/* 2. Sub-Navigation Tabs */}
-      <nav className="arena-tabs" aria-label="Arena modes">
-        <button
-          type="button"
-          className="arena-tab-btn"
-          aria-selected={activeTab === 'join'}
-          onClick={() => setActiveTab('join')}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          </svg>
-          Enter PIN
-        </button>
+        <nav className="arena-sidebar-nav" aria-label="Arena modes">
 
-        <button
-          type="button"
-          className="arena-tab-btn"
-          aria-selected={activeTab === 'host'}
-          onClick={() => setActiveTab('host')}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M5 12h14" />
-            <path d="M12 5l7 7-7 7" />
-          </svg>
-          Host Match
-        </button>
-
-        <button
-          type="button"
-          className="arena-tab-btn"
-          aria-selected={activeTab === 'decks'}
-          onClick={() => setActiveTab('decks')}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-          </svg>
-          Deck Library
-        </button>
-
-        <button
-          type="button"
-          className="arena-tab-btn"
-          aria-selected={activeTab === 'create'}
-          onClick={() => setActiveTab('create')}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Deck Creator
-        </button>
-
-        {currentGameCode && (
           <button
             type="button"
-            className="arena-tab-btn"
-            aria-selected={activeTab === 'lobby' || activeTab === 'play' || activeTab === 'podium'}
-            onClick={() => {
-              if (activeTab !== 'lobby' && activeTab !== 'play' && activeTab !== 'podium') {
-                setActiveTab(gameStarted ? 'play' : 'lobby')
-              }
-            }}
-            style={{ marginLeft: 'auto', color: 'var(--primary)', fontWeight: 700 }}
+            className="arena-sidebar-item"
+            aria-selected={activeTab === 'join'}
+            onClick={() => handleSelectTab('join')}
           >
-            <span className="arena-pulse-dot" />
-            Active PIN: {currentGameCode}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            <div className="arena-sidebar-item-text">
+              <span className="arena-sidebar-item-title">Enter PIN</span>
+              <span className="arena-sidebar-item-desc">Join match with 6-digit code</span>
+            </div>
           </button>
-        )}
-      </nav>
+
+          <button
+            type="button"
+            className="arena-sidebar-item"
+            aria-selected={activeTab === 'host'}
+            onClick={() => handleSelectTab('host')}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+            <div className="arena-sidebar-item-text">
+              <span className="arena-sidebar-item-title">Host Match</span>
+              <span className="arena-sidebar-item-desc">Launch multiplayer session</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            className="arena-sidebar-item"
+            aria-selected={activeTab === 'create'}
+            onClick={() => handleSelectTab('create')}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <div className="arena-sidebar-item-text">
+              <span className="arena-sidebar-item-title">Deck Creator</span>
+              <span className="arena-sidebar-item-desc">Build timed question cards</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            className="arena-sidebar-item"
+            aria-selected={activeTab === 'decks'}
+            onClick={() => handleSelectTab('decks')}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
+            <div className="arena-sidebar-item-text">
+              <span className="arena-sidebar-item-title">Deck Library</span>
+              <span className="arena-sidebar-item-desc">Browse study decks</span>
+            </div>
+          </button>
+
+          {currentGameCode && (
+            <button
+              type="button"
+              className="arena-sidebar-item arena-sidebar-active-match"
+              onClick={() => navigate(`/arena/live/${currentGameCode}`)}
+            >
+              <span className="arena-pulse-dot" />
+              <div className="arena-sidebar-item-text">
+                <span className="arena-sidebar-item-title">PIN #{currentGameCode}</span>
+                <span className="arena-sidebar-item-desc">
+                  {gameStarted ? 'Live Match Running' : 'Lobby Waiting Room'}
+                </span>
+              </div>
+            </button>
+          )}
+        </nav>
+
+        <div className="arena-sidebar-footer">
+          <div className="arena-sidebar-status">
+            <span className="arena-sidebar-status-dot" />
+            <span>{user ? `Logged in: ${user.username}` : 'Guest Player'}</span>
+          </div>
+        </div>
+      </aside>
+
+      {/* 2. Main Studio Workspace */}
+      <main className="arena-workspace">
+        <header className="arena-workspace-header">
+          <div>
+            <h1 className="arena-workspace-title">
+              {activeTab === 'create' && 'Deck Creator'}
+              {activeTab === 'host' && 'Host Live Match'}
+              {activeTab === 'decks' && 'Deck Library'}
+              {activeTab === 'join' && 'Join Live Match'}
+              {activeTab === 'lobby' && 'Session Lobby'}
+              {activeTab === 'play' && 'Live Quiz Match'}
+              {activeTab === 'podium' && 'Leaderboard & Podium'}
+            </h1>
+            <p className="arena-workspace-desc">
+              {activeTab === 'create' && 'Draft quiz banks with timed questions and instant multi-choice options.'}
+              {activeTab === 'host' && 'Select any question bank or deck to generate a real-time multiplayer session.'}
+              {activeTab === 'decks' && 'Explore your saved decks and discover decks shared by fellow learners.'}
+              {activeTab === 'join' && 'Enter the 6-digit session PIN to enter the live game waiting room.'}
+              {activeTab === 'lobby' && `Waiting room for PIN #${currentGameCode}.`}
+              {activeTab === 'play' && `Live match active under PIN #${currentGameCode}.`}
+              {activeTab === 'podium' && 'Final match standings and scores.'}
+            </p>
+          </div>
+
+
+
+          {activeTab === 'decks' && (
+            <div className="arena-workspace-actions">
+              <button
+                type="button"
+                className="btn primary"
+                onClick={() => handleSelectTab('create')}
+              >
+                + Create New Deck
+              </button>
+            </div>
+          )}
+        </header>
+
+        <div className="arena-workspace-body">
 
       {/* =====================================================================
        * TAB 1: JOIN GAME WITH 6-DIGIT PIN
@@ -550,7 +779,7 @@ export function ArenaView({
               type="button"
               className="link"
               style={{ border: 0, background: 'none', cursor: 'pointer', padding: 0 }}
-              onClick={() => setActiveTab('host')}
+              onClick={() => handleSelectTab('host')}
             >
               Launch a quiz from your library
             </button>
@@ -563,24 +792,6 @@ export function ArenaView({
        * ===================================================================== */}
       {activeTab === 'host' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-            <div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Choose a Deck to Host</h2>
-              <p style={{ margin: '0.2rem 0 0', color: 'var(--muted)', fontSize: '0.9375rem' }}>
-                Select any public deck or your own curated question banks to generate a live multiplayer session.
-              </p>
-            </div>
-            {!user && (
-              <button
-                type="button"
-                className="btn line"
-                onClick={onRequireLogin}
-              >
-                Log In to Host Your Custom Decks
-              </button>
-            )}
-          </div>
-
           {!user ? (
             <div style={{ textAlign: 'center', padding: '3.5rem 1.5rem', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 600, margin: '0 0 0.5rem' }}>Authentication Required to Host Matches</h3>
@@ -605,17 +816,57 @@ export function ArenaView({
                   <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.875rem' }}>
                     {quiz.description || 'Comprehensive review questions for study groups.'}
                   </p>
-                  <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.75rem' }}>
-                    <span style={{ fontSize: '0.8125rem', color: 'var(--muted)' }}>
+                  <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.75rem', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.8125rem', color: 'var(--muted)', fontFamily: 'var(--f-mono)' }}>
                       {quiz.question_count || 0} Questions
                     </span>
-                    <button
-                      type="button"
-                      className="btn primary"
-                      onClick={() => handleHostLaunch(quiz.id)}
-                    >
-                      Host Deck →
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                      {user && quiz.owner === user.username && (
+                        <>
+                          <button
+                            type="button"
+                            className="btn ghost"
+                            style={{ fontSize: '0.8125rem', padding: '0.35rem 0.65rem' }}
+                            onClick={() => handleLoadQuizForEdit(quiz.id)}
+                            title="Edit full deck and questions in creator"
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="btn line"
+                            style={{ fontSize: '0.8125rem', padding: '0.35rem 0.65rem' }}
+                            onClick={() => {
+                              setQuickUpdateQuiz(quiz)
+                              setQuickUpdateTitle(quiz.title)
+                              setQuickUpdateDesc(quiz.description || '')
+                              setQuickUpdateVisibility(quiz.visibility)
+                              setQuickUpdateMsg(null)
+                            }}
+                            title="Update deck settings"
+                          >
+                            🔄 Update
+                          </button>
+                          <button
+                            type="button"
+                            className="btn ghost danger"
+                            style={{ fontSize: '0.8125rem', padding: '0.35rem 0.65rem' }}
+                            onClick={() => handleDeleteQuiz(quiz.id)}
+                            title="Delete this deck"
+                          >
+                            🗑️ Delete
+                          </button>
+                        </>
+                      )}
+                      <button
+                        type="button"
+                        className="btn primary"
+                        style={{ fontSize: '0.8125rem', padding: '0.35rem 0.85rem' }}
+                        onClick={() => handleHostLaunch(quiz.id)}
+                      >
+                        ⚡ Host
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -627,7 +878,7 @@ export function ArenaView({
                   <button
                     type="button"
                     className="btn primary"
-                    onClick={() => setActiveTab('create')}
+                    onClick={() => handleSelectTab('create')}
                   >
                     + Create New Deck
                   </button>
@@ -695,17 +946,42 @@ export function ArenaView({
                   <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.875rem' }}>
                     {quiz.description || 'Active recall study questions.'}
                   </p>
-                  <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.75rem' }}>
+                  <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.75rem', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '0.8125rem', color: 'var(--muted)' }}>
                       {quiz.question_count || 0} Questions
                     </span>
-                    <button
-                      type="button"
-                      className="btn primary"
-                      onClick={() => handleHostLaunch(quiz.id)}
-                    >
-                      Host Live Match
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                      {user && quiz.owner === user.username && (
+                        <>
+                          <button
+                            type="button"
+                            className="btn ghost"
+                            style={{ fontSize: '0.8125rem', padding: '0.3rem 0.55rem' }}
+                            onClick={() => handleLoadQuizForEdit(quiz.id)}
+                            title="Edit this deck"
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="btn ghost danger"
+                            style={{ fontSize: '0.8125rem', padding: '0.3rem 0.55rem' }}
+                            onClick={() => handleDeleteQuiz(quiz.id)}
+                            title="Delete this deck"
+                          >
+                            🗑️
+                          </button>
+                        </>
+                      )}
+                      <button
+                        type="button"
+                        className="btn primary"
+                        style={{ fontSize: '0.8125rem', padding: '0.35rem 0.75rem' }}
+                        onClick={() => handleHostLaunch(quiz.id)}
+                      >
+                        Host Match ▶
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -720,7 +996,7 @@ export function ArenaView({
                   <button
                     type="button"
                     className="btn primary"
-                    onClick={() => setActiveTab('create')}
+                    onClick={() => handleSelectTab('create')}
                   >
                     + Create New Deck
                   </button>
@@ -735,17 +1011,66 @@ export function ArenaView({
        * TAB 4: DECK CREATOR
        * ===================================================================== */}
       {activeTab === 'create' && (
-        <div style={{ maxWidth: '44rem', marginInline: 'auto', width: '100%' }}>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.5rem' }}>
-              Create a Quiz Deck
-            </h2>
-            <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.9375rem' }}>
-              Draft a quiz bank with timed question cards and multiple choice options.
-            </p>
+        <div className="arena-creator-container">
+          {/* Deck Creator Toolbar (CRUD + Host controls) */}
+          <div className="arena-creator-toolbar">
+            <div className="arena-creator-toolbar-left">
+              {editingQuizId ? (
+                <>
+                  <span className="arena-edit-badge">
+                    ✏️ Editing: {createTitle || 'Deck'}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn line"
+                    style={{ fontSize: '0.8125rem', padding: '0.35rem 0.75rem' }}
+                    onClick={handleStartNewDeck}
+                  >
+                    + New Blank Deck
+                  </button>
+                </>
+              ) : (
+                <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--muted)' }}>
+                  Drafting New Deck
+                </span>
+              )}
+
+              {myQuizzes.length > 0 && (
+                <select
+                  value={editingQuizId || ''}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      handleLoadQuizForEdit(e.target.value)
+                    } else {
+                      handleStartNewDeck()
+                    }
+                  }}
+                  className="inp"
+                  style={{ width: 'auto', padding: '0.35rem 0.65rem', fontSize: '0.8125rem' }}
+                >
+                  <option value="">Edit an existing deck...</option>
+                  {myQuizzes.map((q) => (
+                    <option key={q.id} value={q.id}>
+                      {q.title} ({q.question_count || 0} Qs)
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            <div className="arena-creator-toolbar-right">
+              <button
+                type="button"
+                className="btn ok"
+                style={{ fontSize: '0.8125rem', padding: '0.35rem 0.85rem' }}
+                onClick={handleHostFromCreator}
+              >
+                ⚡ Host This Deck Now
+              </button>
+            </div>
           </div>
 
-          <form onSubmit={handleSaveNewQuiz} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <form onSubmit={handleSaveOrUpdateQuiz} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div className="field">
               <label htmlFor="createTitleInput">Deck Title</label>
               <input
@@ -815,16 +1140,9 @@ export function ArenaView({
                     border: '1px dashed var(--border)',
                   }}
                 >
-                  <p style={{ margin: '0 0 1rem', color: 'var(--muted)', fontSize: '0.9375rem' }}>
-                    No questions added yet. Click &ldquo;+ Add Question Card&rdquo; to start building your questions.
+                  <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.9375rem' }}>
+                    No questions added yet. Use the &ldquo;+ Add Question Card&rdquo; button above to create question cards.
                   </p>
-                  <button
-                    type="button"
-                    className="btn primary"
-                    onClick={addQuestionTemplate}
-                  >
-                    + Add Question Card
-                  </button>
                 </div>
               ) : (
                 createQuestions.map((q, qIndex) => (
@@ -943,13 +1261,26 @@ export function ArenaView({
               </div>
             )}
 
-            <button
-              type="submit"
-              className="btn primary big"
-              disabled={isCreatingQuiz}
-            >
-              {isCreatingQuiz ? 'Saving Deck...' : 'Save Quiz Deck to Library →'}
-            </button>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              <button
+                type="submit"
+                className="btn primary big"
+                disabled={isCreatingQuiz}
+              >
+                {isCreatingQuiz ? 'Saving...' : 'Save Deck'}
+              </button>
+
+              {editingQuizId && (
+                <button
+                  type="button"
+                  className="btn line danger big"
+                  onClick={() => handleDeleteQuiz(editingQuizId)}
+                  disabled={isDeletingQuiz}
+                >
+                  Delete Deck
+                </button>
+              )}
+            </div>
           </form>
         </div>
       )}
@@ -1230,7 +1561,7 @@ export function ArenaView({
               className="btn primary"
               onClick={() => {
                 setCurrentGameCode(null)
-                setActiveTab('join')
+                handleSelectTab('join')
                 setSelectedChoiceId(null)
                 setAnswerResult(null)
                 setMyScore(0)
@@ -1243,7 +1574,7 @@ export function ArenaView({
               className="btn line"
               onClick={() => {
                 setCurrentGameCode(null)
-                setActiveTab('host')
+                handleSelectTab('host')
               }}
             >
               Host New Match
@@ -1257,6 +1588,95 @@ export function ArenaView({
                 Back to Home
               </button>
             )}
+          </div>
+        </div>
+      )}
+        </div>
+      </main>
+
+      {/* Quick Update Deck Modal for Host Match */}
+      {quickUpdateQuiz && (
+        <div className="arena-modal-overlay" onClick={() => setQuickUpdateQuiz(null)}>
+          <div className="arena-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="arena-modal-header">
+              <h3 className="arena-modal-title">Update Deck</h3>
+              <button
+                type="button"
+                className="btn ghost"
+                style={{ padding: '0.2rem 0.5rem', fontSize: '1rem' }}
+                onClick={() => setQuickUpdateQuiz(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleApplyQuickUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="field">
+                <label htmlFor="quTitle">Deck Title</label>
+                <input
+                  id="quTitle"
+                  type="text"
+                  value={quickUpdateTitle}
+                  onChange={(e) => setQuickUpdateTitle(e.target.value)}
+                  className="inp"
+                  required
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="quDesc">Description</label>
+                <textarea
+                  id="quDesc"
+                  value={quickUpdateDesc}
+                  onChange={(e) => setQuickUpdateDesc(e.target.value)}
+                  className="inp"
+                  rows={2}
+                />
+              </div>
+
+              <div className="field">
+                <label>Visibility</label>
+                <div className="seg" style={{ width: 'fit-content' }}>
+                  <button
+                    type="button"
+                    aria-selected={quickUpdateVisibility === 'public'}
+                    onClick={() => setQuickUpdateVisibility('public')}
+                  >
+                    Public
+                  </button>
+                  <button
+                    type="button"
+                    aria-selected={quickUpdateVisibility === 'private'}
+                    onClick={() => setQuickUpdateVisibility('private')}
+                  >
+                    Private
+                  </button>
+                </div>
+              </div>
+
+              {quickUpdateMsg && (
+                <div className={`note ${quickUpdateMsg.type === 'ok' ? 'success' : 'error'}`}>
+                  {quickUpdateMsg.text}
+                </div>
+              )}
+
+              <div className="arena-modal-footer">
+                <button
+                  type="button"
+                  className="btn line"
+                  onClick={() => setQuickUpdateQuiz(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn primary"
+                  disabled={isQuickUpdating}
+                >
+                  {isQuickUpdating ? 'Updating...' : 'Save Deck Changes'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

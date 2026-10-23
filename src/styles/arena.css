@@ -6,87 +6,244 @@
  * ╚════════════════════════════════════════════════════════════════════════════╝ */
 
 /* ==========================================================================
- * 1. ARENA LAYOUT & CONTAINER
+ * 1. ARENA STUDIO LAYOUT (SIDEBAR + WORKSPACE)
  * ========================================================================== */
-.arena-wrapper {
-  padding-block: 2rem 4rem;
-  max-width: 76rem;
-  margin-inline: auto;
+.arena-studio-layout {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  min-height: calc(100vh - 4rem);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.arena-sidebar {
+  width: 17.5rem;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+  gap: 1.5rem;
+  position: sticky;
+  top: 3.75rem;
+  height: calc(100vh - 3.75rem);
+  overflow-y: auto;
+}
+
+.arena-sidebar-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-inline: 0.5rem;
+}
+
+.arena-sidebar-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--primary);
+}
+
+.arena-sidebar-heading {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.arena-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+.arena-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease-in-out;
   width: 100%;
 }
 
-.arena-hero {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 2rem;
-  text-align: left;
-}
-
-.arena-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: var(--accent);
-  color: var(--accent-ink);
-  padding: 0.25rem 0.8rem;
-  border-radius: var(--radius-full);
-  font-size: 0.875rem;
-  font-weight: 600;
-  width: fit-content;
-}
-
-.arena-title {
-  font-size: clamp(2rem, 5vw, 2.75rem);
-  font-weight: 700;
-  line-height: 1.1;
+.arena-sidebar-item:hover {
+  background: var(--card);
   color: var(--text);
+  border-color: var(--border);
 }
 
-.arena-desc {
-  color: var(--muted);
-  font-size: 1.0625rem;
-  max-width: 42rem;
-  margin: 0;
-}
-
-/* ==========================================================================
- * 2. SUB-NAVIGATION TABS (Join, Host, Decks, Creator)
- * ========================================================================== */
-.arena-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 0.35rem;
-  border-radius: var(--radius-lg);
-  margin-bottom: 2rem;
-}
-
-.arena-tab-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.65rem 1.1rem;
-  border-radius: var(--radius-md);
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  font-weight: 600;
-  font-size: 0.9375rem;
-  transition: all 0.15s ease-in-out;
-}
-
-.arena-tab-btn:hover {
-  color: var(--text);
-  background: rgba(0, 0, 0, 0.03);
-}
-
-.arena-tab-btn[aria-selected="true"] {
+.arena-sidebar-item[aria-selected="true"] {
   background: var(--card);
   color: var(--primary);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  border-color: var(--primary);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.arena-sidebar-item svg {
+  flex-shrink: 0;
+}
+
+.arena-sidebar-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.arena-sidebar-item-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.arena-sidebar-item-desc {
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 0.15rem;
+}
+
+.arena-sidebar-item[aria-selected="true"] .arena-sidebar-item-desc {
+  color: var(--text);
+  opacity: 0.75;
+}
+
+.arena-sidebar-active-match {
+  margin-top: 0.5rem;
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.arena-sidebar-footer {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.arena-sidebar-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  padding-inline: 0.5rem;
+}
+
+.arena-sidebar-status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--ok);
+  flex-shrink: 0;
+}
+
+/* ── WORKSPACE ── */
+.arena-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 2rem 2.5rem 4rem;
+}
+
+.arena-workspace-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.arena-workspace-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.arena-workspace-desc {
+  color: var(--muted);
+  font-size: 0.9375rem;
+  margin: 0.35rem 0 0;
+  max-width: 44rem;
+}
+
+.arena-workspace-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.arena-workspace-body {
+  flex: 1;
+  width: 100%;
+}
+
+.arena-creator-container {
+  max-width: 62rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@media (max-width: 64rem) {
+  .arena-studio-layout {
+    flex-direction: column;
+  }
+  .arena-sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1rem;
+    gap: 0.75rem;
+  }
+  .arena-sidebar-brand {
+    display: none;
+  }
+  .arena-sidebar-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    gap: 0.5rem;
+  }
+  .arena-sidebar-item {
+    flex-shrink: 0;
+    width: auto;
+    padding: 0.5rem 0.85rem;
+  }
+  .arena-sidebar-item-desc {
+    display: none;
+  }
+  .arena-sidebar-footer {
+    display: none;
+  }
+  .arena-workspace {
+    padding: 1.25rem 1rem 2.5rem;
+  }
 }
 
 /* ==========================================================================
@@ -500,4 +657,188 @@
   flex-direction: column;
   gap: 0.85rem;
   margin-bottom: 1rem;
+}
+
+/* ==========================================================================
+ * 8. DECK CREATOR TOOLBAR & CRUD CONTROLS
+ * ========================================================================== */
+.arena-creator-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  flex-wrap: wrap;
+}
+
+.arena-creator-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.arena-creator-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.arena-edit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--primary);
+}
+
+/* ==========================================================================
+ * 9. FULLSCREEN ARENA LIVE GAME ROOM (DISTRACTION-FREE FOCUS)
+ * ========================================================================== */
+.arena-live-room {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.arena-live-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 2rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  gap: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.arena-live-hud-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 1.0625rem;
+  color: var(--text);
+}
+
+.arena-live-hud-center {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.arena-live-hud-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.arena-live-pin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--f-mono);
+  font-weight: 700;
+  font-size: 1.125rem;
+  letter-spacing: 0.08em;
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--radius-md);
+  color: var(--primary);
+}
+
+.arena-live-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  width: 100%;
+  max-width: 60rem;
+  margin-inline: auto;
+}
+
+@media (max-width: 48rem) {
+  .arena-live-hud {
+    padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+  }
+  .arena-live-content {
+    padding: 1.5rem 1rem;
+  }
+}
+
+/* ==========================================================================
+ * 10. DECK UPDATE MODAL (HOST MATCH QUICK UPDATE)
+ * ========================================================================== */
+.arena-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.arena-modal-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 32rem;
+  padding: 1.75rem;
+  box-shadow: var(--shadow-xl);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  animation: modalEnter 0.15s ease-out;
+}
+
+@keyframes modalEnter {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.arena-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.arena-modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+}
+
+.arena-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
 }

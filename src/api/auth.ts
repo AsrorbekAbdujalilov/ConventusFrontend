@@ -9,6 +9,10 @@ import type {
   UserProfile,
   UserProfileUpdatePayload,
   UserProfileUpdateResponse,
+  UserPaletteDB,
+  CreatePalettePayload,
+  SetActivePaletteResponse,
+  DeletePaletteResponse,
 } from './types'
 
 export const authApi = {
@@ -97,6 +101,58 @@ export const authApi = {
     return apiClient<{ message: string }>('/api/auth/token/refresh/', {
       method: 'POST',
       retryOn401: false,
+    })
+  },
+
+  // ──────────────────────────────────────────────
+  // CUSTOM PALETTE (DB-backed per-user themes)
+  // ──────────────────────────────────────────────
+
+  /**
+   * List all custom palettes saved for the authenticated user
+   */
+  async getPalettes(): Promise<UserPaletteDB[]> {
+    return apiClient<UserPaletteDB[]>('/api/auth/palettes/', {
+      method: 'GET',
+    })
+  },
+
+  /**
+   * Create a new custom palette and save to DB
+   */
+  async createPalette(payload: CreatePalettePayload): Promise<UserPaletteDB> {
+    return apiClient<UserPaletteDB>('/api/auth/palettes/', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  /**
+   * Update an existing custom palette (rename or recolor)
+   */
+  async updatePalette(id: number, payload: Partial<CreatePalettePayload>): Promise<UserPaletteDB> {
+    return apiClient<UserPaletteDB>(`/api/auth/palettes/${id}/`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  /**
+   * Delete a custom palette from DB
+   */
+  async deletePalette(id: number): Promise<DeletePaletteResponse> {
+    return apiClient<DeletePaletteResponse>(`/api/auth/palettes/${id}/`, {
+      method: 'DELETE',
+    })
+  },
+
+  /**
+   * Tell the backend which palette is currently active (persists across devices)
+   */
+  async setActivePalette(paletteId: string): Promise<SetActivePaletteResponse> {
+    return apiClient<SetActivePaletteResponse>('/api/auth/palettes/set-active/', {
+      method: 'POST',
+      body: JSON.stringify({ palette_id: paletteId }),
     })
   },
 }

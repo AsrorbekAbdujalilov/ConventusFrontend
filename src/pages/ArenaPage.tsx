@@ -8,16 +8,19 @@ export function ArenaPage() {
   const [searchParams] = useSearchParams()
 
   const tabParam = searchParams.get('tab')
+  const editParam = searchParams.get('edit') || undefined
   const initialTab =
-    tabParam === 'create' ? 'create'
+    tabParam === 'create' || editParam ? 'create'
     : tabParam === 'decks' || tabParam === 'library' ? 'decks'
     : tabParam === 'host' ? 'host'
-    : 'join'
+    : tabParam === 'join' ? 'join'
+    : 'create'
 
   return (
     <ArenaView
       user={user}
       initialTab={initialTab as 'join' | 'host' | 'decks' | 'create'}
+      initialEditQuizId={editParam}
       onRequireLogin={() => navigate('/auth')}
       onBackToHome={() => navigate('/')}
     />

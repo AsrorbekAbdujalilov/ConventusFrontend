@@ -188,3 +188,138 @@
   box-shadow: var(--shadow-lg);
   z-index: 20;
 }
+
+
+/* ==========================================
+ * 🎨 PROFILE CUSTOM THEME STUDIO STYLES
+ * ========================================== */
+
+.theme-studio-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.theme-studio-colors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1rem;
+}
+
+.theme-color-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: border-color 0.15s ease;
+}
+
+.theme-color-card:hover {
+  border-color: var(--primary);
+}
+
+.theme-color-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.theme-color-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.theme-color-picker-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.theme-native-color-picker {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.theme-native-color-picker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.theme-native-color-picker::-webkit-color-swatch {
+  border: none;
+  border-radius: calc(var(--radius-md) - 2px);
+}
+
+.theme-hex-input {
+  font-family: var(--f-mono);
+  font-size: 0.9375rem;
+  text-transform: uppercase;
+  flex: 1;
+}
+
+.theme-preview-card {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  transition: all 0.2s ease;
+}
+
+.theme-saved-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+}
+
+.theme-saved-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  transition: all 0.15s ease;
+}
+
+.theme-saved-card.active-theme {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.theme-swatch-row {
+  display: flex;
+  align-items: center;
+  gap: -0.25rem;
+}
+
+.theme-swatch-circle {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  border: 2px solid var(--card);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  margin-left: -0.25rem;
+}
+
+.theme-swatch-circle:first-child {
+  margin-left: 0;
+}
