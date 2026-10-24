@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Duel League</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: a match-day programme. Setup is a stack of plain sections. In play, a header strip (round and clock), the boards as fixture cards, then the league table. */
+:root{
+  --bg:#eef3ec; --surface:#fbfdfa; --surface2:#e0e9de; --line:#b9c9b5;
+  --fg:#14281c; --muted:#4f6657; --accent:#8f6200; --on-accent:#ffffff;
+  --good:#1b7a46; --bad:#b53a2f; --you:#1d5fa8;
+  --f-display:'Barlow Condensed','Arial Narrow',Impact,sans-serif;
+  --f-body:'Barlow',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c1b13; --surface:#13271c; --surface2:#1b3527; --line:#2c4a38;
+    --fg:#e9f1e6; --muted:#93ab9a; --accent:#f0c24a; --on-accent:#1a1405;
+    --good:#5fd08e; --bad:#ff8478; --you:#7db7f2; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c1b13; --surface:#13271c; --surface2:#1b3527; --line:#2c4a38;
+  --fg:#e9f1e6; --muted:#93ab9a; --accent:#f0c24a; --on-accent:#1a1405;
+  --good:#5fd08e; --bad:#ff8478; --you:#7db7f2; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.45}
+.wrap{max-width:860px;margin:0 auto;padding-block:22px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin:0}
+h1{font-size:clamp(2.2rem,8vw,3.4rem);line-height:1}
+h2{font-size:1.5rem}
+h3{font-size:1.15rem;color:var(--muted)}
+p{margin:0}
+.muted{color:var(--muted)}
+.lede{color:var(--muted);max-width:58ch;margin-top:8px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.grid>*{min-width:0}
+.field{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--muted)}
+.field input,.field select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:9px 10px;width:100%}
+.hint{font-size:.82rem;color:var(--muted)}
+button{font:inherit;color:inherit}
+.btn{background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:10px 16px;cursor:pointer;font-weight:600}
+.btn:hover:not(:disabled){border-color:var(--muted)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#errs{color:var(--bad);font-weight:600;display:flex;flex-direction:column;gap:3px}
+.sec-title{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+
+/* game header */
+.strip{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;justify-content:space-between;border-bottom:2px solid var(--fg);padding-bottom:8px}
+.strip .big{font-family:var(--f-display);font-weight:700;font-size:1.9rem;text-transform:uppercase;letter-spacing:.04em;line-height:1}
+.strip .clock{font-family:var(--f-display);font-size:1.25rem;font-variant-numeric:tabular-nums;color:var(--muted)}
+
+/* fixtures */
+.boards{display:flex;flex-direction:column;gap:8px}
+.board{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.board.mine{border-color:var(--you);box-shadow:0 0 0 1px var(--you) inset}
+.fx{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center}
+.side{min-width:0;overflow-wrap:anywhere;font-weight:600}
+.side.r{text-align:right}
+.side .sub{display:block;font-weight:400;font-size:.8rem;color:var(--muted)}
+.side.you{color:var(--you)}
+.mid{font-family:var(--f-display);font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;text-align:center;min-width:3.2ch;letter-spacing:.04em}
+.mid.vs{font-size:1rem;color:var(--muted)}
+.detail{font-size:.82rem;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.bye{font-size:.9rem;color:var(--muted);padding:2px 2px}
+
+/* table */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-family:var(--f-display);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:.85rem;color:var(--muted)}
+th:nth-child(2),td:nth-child(2){text-align:left;white-space:normal}
+th:first-child,td:first-child{text-align:left;width:3.2ch}
+td.pts{font-weight:700;color:var(--accent)}
+@media (max-width:480px){.rd{display:none}th,td{padding:7px 5px}}
+tr.you td{color:var(--you)}
+tr.lead td:first-child{font-weight:700}
+.note{border-left:3px solid var(--accent);padding:6px 12px;background:var(--bg);font-size:.9rem;color:var(--muted)}
+
+/* question */
+.qtext{font-family:var(--f-display);font-size:clamp(1.6rem,5vw,2.2rem);font-weight:600;line-height:1.15;text-wrap:balance}
+.tbar{height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.tbar>i{display:block;height:100%;width:100%;background:var(--accent)}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:520px){.opts{grid-template-columns:minmax(0,1fr)}}
+.opts .btn{text-align:left;padding:14px;font-size:1.05rem}
+.opts .ok{background:var(--good);border-color:var(--good);color:#06150d}
+.opts .bad{background:var(--bad);border-color:var(--bad);color:#1a0a08}
+.champ{font-family:var(--f-display);font-weight:700;font-size:clamp(1.8rem,6vw,2.8rem);text-transform:uppercase;line-height:1.05}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- SETUP -->
+<section id="setup" class="stack">
+  <div>
+    <h1>Duel League</h1>
+    <p class="lede">A league of one-on-one quiz duels. Opponents are paired Swiss style: the strongest available player meets the next strongest, and nobody plays the same opponent twice.</p>
+  </div>
+
+  <div class="card stack">
+    <h2>Tournament</h2>
+    <div class="grid">
+      <label class="field">Players (4 to 32)<input id="players" type="number" min="4" max="32" step="1"></label>
+      <label class="field">Tournament ends after
+        <select id="endMode"><option value="rounds">A number of rounds</option><option value="time">A time limit</option></select></label>
+      <label class="field" id="roundsField">Rounds<input id="rounds" type="number" min="1" max="29" step="1"></label>
+      <label class="field" id="minutesField" hidden>Minutes of answering time<input id="minutes" type="number" min="1" max="120" step="1"></label>
+    </div>
+    <p class="hint" id="lenHint"></p>
+    <div class="grid">
+      <label class="field">Your seat
+        <select id="seat"><option value="player">Play as Player 1</option><option value="spectator">Spectator (all bots)</option></select></label>
+      <label class="field">Bot skill
+        <select id="difficulty"><option value="easy">Easy</option><option value="normal">Normal</option><option value="hard">Hard</option></select></label>
+      <label class="field">Seconds per question (5 to 60)<input id="qTime" type="number" min="5" max="60" step="1"></label>
+      <label class="field">Seed (blank = random)<input id="seed" type="text" maxlength="24" autocomplete="off"></label>
+    </div>
+  </div>
+
+  <div class="card stack">
+    <h2>Points per duel</h2>
+    <div class="grid">
+      <label class="field">Only you answer correctly<input id="p_win" type="number" min="0" max="20" step="0.5"></label>
+      <label class="field">Both correct, you were faster<input id="p_fast" type="number" min="0" max="20" step="0.5"></label>
+      <label class="field">Both correct, you were slower<input id="p_slow" type="number" min="0" max="20" step="0.5"></label>
+      <label class="field">Bye (no opponent)<input id="p_bye" type="number" min="0" max="20" step="0.5"></label>
+    </div>
+    <p class="hint">Both wrong, or no answer in time, scores 0. Answering wrong while your opponent is right scores 0.</p>
+    <div class="note"><b>Ranking order:</b> most points, then lowest total answer time, then most correct answers. A timeout counts as the full question time, and so does a bye.</div>
+  </div>
+
+  <div id="errs" role="alert" aria-live="polite"></div>
+  <div class="row"><button class="btn primary" id="start" type="button">Start league</button></div>
+</section>
+
+<!-- GAME -->
+<section id="game" class="stack" hidden>
+  <div class="strip"><span class="big" id="gTitle"></span><span class="clock" id="gClock"></span></div>
+  <div id="stage" class="stack"></div>
+</section>
+
+</div>
+
+<script>
+/*ENGINE_START*/
+const QUESTIONS = [
+  {q:'What is the capital of Uzbekistan?', a:['Tashkent','Samarkand','Bukhara','Khiva'], c:0},
+  {q:'Which city is famous for the Registan square?', a:['Samarkand','Tashkent','Andijan','Nukus'], c:0},
+  {q:'Which Central Asian sea has nearly disappeared?', a:['Aral Sea','Caspian Sea','Black Sea','Dead Sea'], c:0},
+  {q:'What is the capital of Kazakhstan?', a:['Astana','Almaty','Bishkek','Dushanbe'], c:0},
+  {q:'Which mountains cover much of Tajikistan?', a:['Pamir','Alps','Andes','Urals'], c:0},
+  {q:'Which lake is the largest in Kyrgyzstan?', a:['Issyk-Kul','Baikal','Balkhash','Sarez'], c:0},
+  {q:'Which ruler made Samarkand his capital in the 14th century?', a:['Amir Timur','Genghis Khan','Babur','Ulugh Beg'], c:0},
+  {q:'The Silk Road linked China with…', a:['The Mediterranean','Australia','Brazil','Canada'], c:0},
+  {q:'7 × 8 = ?', a:['56','54','48','64'], c:0},
+  {q:'What is the square root of 144?', a:['12','14','11','16'], c:0},
+  {q:'Which planet is called the Red Planet?', a:['Mars','Venus','Jupiter','Mercury'], c:0},
+  {q:'What is the chemical formula of water?', a:['H₂O','CO₂','O₂','NaCl'], c:0}
+];
+const NAMES = ['Aziza','Timur','Dilnoza','Bekzod','Madina','Jasur','Zarina','Rustam','Nodira','Sardor','Malika','Otabek','Gulnora','Farrukh','Kamola','Sherzod','Laylo','Ulugbek','Aibek','Aigerim','Nurlan','Dana','Askar','Zhanar','Bolat','Aliya','Emir','Meerim','Tilek','Aida','Daniyar','Saltanat'];
+// acc = chance a bot knows the answer, t = typical seconds to answer when the limit is 15s
+const DIFF = {easy:{acc:.55,t:9}, normal:{acc:.75,t:6.5}, hard:{acc:.9,t:4.5}};
+const DEFAULTS = {players:8, endMode:'rounds', rounds:3, minutes:5, seat:'player', difficulty:'normal', qTime:15, seed:'', pts:{win:2,fast:2,slow:1,bye:1}};
+
+const clone=o=>JSON.parse(JSON.stringify(o));
+const r2=x=>Math.round(x*100)/100, r3=x=>Math.round(x*1000)/1000;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+function mulberry32(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shuffle(a,R){for(let i=a.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function gauss(R){let u=0,v=0;while(!u)u=R();while(!v)v=R();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+
+// Most rounds that can always be paired without a rematch. Beyond this the last rounds can run out of fresh opponents.
+const maxRounds=n=>n===4?3:(n%2?n-2:n-3);
+function validate(S){
+  const e=[], int=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi, num=v=>typeof v==='number'&&isFinite(v);
+  const okN=int(S.players,4,32);
+  if(!okN) e.push('Players must be a whole number from 4 to 32.');
+  if(!DIFF[S.difficulty]) e.push('Choose a bot skill.');
+  if(S.endMode==='rounds'){
+    const max=okN?maxRounds(S.players):29;
+    if(!int(S.rounds,1,max)) e.push(`Rounds must be a whole number from 1 to ${max}.${okN?` With ${S.players} players, more rounds could leave a round with no opponent who has not already been played.`:''}`);
+  } else if(S.endMode==='time'){
+    if(!int(S.minutes,1,120)) e.push('Minutes must be a whole number from 1 to 120.');
+  } else e.push('Choose how the tournament ends.');
+  if(!int(S.qTime,5,60)) e.push('Seconds per question must be a whole number from 5 to 60.');
+  const p=S.pts;
+  for(const [k,n] of [['win','Only you correct'],['fast','Both correct, faster'],['slow','Both correct, slower'],['bye','Bye']])
+    if(!num(p[k])||p[k]<0||p[k]>20) e.push(`${n} points must be a number from 0 to 20.`);
+  if([p.win,p.fast,p.slow,p.bye].every(num)){
+    if(p.fast>p.win) e.push('The faster correct answer cannot score more than a lone correct answer.');
+    if(p.slow>p.fast) e.push('The slower correct answer cannot score more than the faster one.');
+    if(p.bye>p.win) e.push('A bye cannot score more than a win.');
+  }
+  return e;
+}
+
+/* ---------- tournament ---------- */
+function createTournament(S,seed){
+  const R=mulberry32(seed>>>0), n=S.players, base=DIFF[S.difficulty];
+  const names=shuffle(NAMES.slice(),R), humanId=S.seat==='spectator'?-1:0;
+  const scale=Math.min(1.5,S.qTime/15);
+  const players=[];
+  for(let i=0;i<n;i++){
+    const z=gauss(R);
+    players.push({id:i,name:i===humanId?'You':names[i],human:i===humanId,
+      acc:clamp(base.acc+.09*z,.2,.97), tm:clamp(base.t*scale*Math.exp(-.18*z),.9,S.qTime*.8),
+      pts:0,time:0,correct:0,played:0,byes:0,opp:new Set(),hist:[],tie:R()});
+  }
+  return {S:clone(S),R,players,humanId,round:0,matches:[],bye:null,elapsed:0,over:false,reason:'',bag:[]};
+}
+function rankOrder(T){return T.players.slice().sort((x,y)=>y.pts-x.pts||x.time-y.time||y.correct-x.correct||x.tie-y.tie);}
+function standingsRows(T){
+  const o=rankOrder(T), same=(a,b)=>a.pts===b.pts&&a.time===b.time&&a.correct===b.correct;
+  return o.map(p=>({p,rank:1+o.filter(x=>x.pts>p.pts||(x.pts===p.pts&&(x.time<p.time||(x.time===p.time&&x.correct>p.correct)))).length,tied:o.some(x=>x!==p&&same(x,p))}));
+}
+// Edmonds' blossom algorithm: finds a maximum matching, so we know for certain whether a full pairing exists.
+function maxMatching(n,adj){
+  const match=Array(n).fill(-1), p=Array(n).fill(-1), base=Array(n);
+  let used, blos, q;
+  const lca=(a,b)=>{ const u=Array(n).fill(false);
+    for(;;){ a=base[a]; u[a]=true; if(match[a]===-1) break; a=p[match[a]]; }
+    for(;;){ b=base[b]; if(u[b]) return b; b=p[match[b]]; } };
+  const markPath=(v,b,ch)=>{ while(base[v]!==b){ blos[base[v]]=blos[base[match[v]]]=true; p[v]=ch; ch=match[v]; v=p[match[v]]; } };
+  const findPath=root=>{
+    used=Array(n).fill(false); p.fill(-1); for(let i=0;i<n;i++) base[i]=i;
+    used[root]=true; q=[root];
+    for(let qh=0;qh<q.length;qh++){
+      const v=q[qh];
+      for(const to of adj[v]){
+        if(base[v]===base[to]||match[v]===to) continue;
+        if(to===root||(match[to]!==-1&&p[match[to]]!==-1)){
+          const cb=lca(v,to); blos=Array(n).fill(false);
+          markPath(v,cb,to); markPath(to,cb,v);
+          for(let i=0;i<n;i++) if(blos[base[i]]){ base[i]=cb; if(!used[i]){ used[i]=true; q.push(i); } }
+        } else if(p[to]===-1){
+          p[to]=v;
+          if(match[to]===-1) return to;
+          used[match[to]]=true; q.push(match[to]);
+        }
+      }
+    }
+    return -1;
+  };
+  for(let i=0;i<n;i++) if(match[i]===-1){
+    let v=findPath(i);
+    while(v!==-1){ const pv=p[v], ppv=match[pv]; match[v]=pv; match[pv]=v; v=ppv; }
+  }
+  return match;
+}
+// Preferred pairing: strongest with the next strongest available. If that search runs long, fall back to the exact algorithm.
+function matchAll(list){
+  let nodes=0; const out=[];
+  function rec(arr){
+    if(!arr.length) return true;
+    if(++nodes>20000) return false;
+    const a=arr[0];
+    for(let j=1;j<arr.length;j++){
+      const b=arr[j]; if(a.opp.has(b.id)) continue;
+      out.push([a,b]);
+      if(rec(arr.slice(1,j).concat(arr.slice(j+1)))) return true;
+      out.pop(); if(nodes>20000) return false;
+    }
+    return false;
+  }
+  if(rec(list)) return out.slice();
+  const n=list.length, adj=list.map((a,i)=>list.map((b,j)=>j).filter(j=>j!==i&&!a.opp.has(list[j].id)));
+  const m=maxMatching(n,adj);
+  if(m.some(x=>x===-1)) return null;
+  const pairs=[]; for(let i=0;i<n;i++) if(m[i]>i) pairs.push([list[i],list[m[i]]]);
+  return pairs;
+}
+function pairRound(T){
+  const order=rankOrder(T);
+  if(order.length%2===0){ const pr=matchAll(order); return pr?{pairs:pr,bye:null}:null; }
+  for(let i=order.length-1;i>=0;i--){            // bye goes to the lowest-ranked player who has not had one
+    const c=order[i]; if(c.byes>0) continue;
+    const pr=matchAll(order.filter(x=>x!==c)); if(pr) return {pairs:pr,bye:c};
+  }
+  return null;
+}
+function botAnswer(T,p){
+  const R=T.R, q=T.S.qTime; let t=Math.max(.8,p.tm*Math.exp(.35*gauss(R))), c=R()<p.acc;
+  if(t>=q){ t=q; c=false; }
+  return {c,t:r3(t)};
+}
+function drawQ(T){ if(!T.bag.length) T.bag=shuffle(QUESTIONS.map((_,i)=>i),T.R); return T.bag.pop(); }
+function scoreDuel(pts,ra,rb){
+  if(ra.c&&rb.c){
+    if(Math.abs(ra.t-rb.t)<1e-9) return {pa:pts.fast,pb:pts.fast,kind:'both'};
+    return ra.t<rb.t?{pa:pts.fast,pb:pts.slow,kind:'both'}:{pa:pts.slow,pb:pts.fast,kind:'both'};
+  }
+  if(ra.c) return {pa:pts.win,pb:0,kind:'one'};
+  if(rb.c) return {pa:0,pb:pts.win,kind:'one'};
+  return {pa:0,pb:0,kind:'none'};
+}
+function completeMatch(T,m,ra,rb){
+  const sc=scoreDuel(T.S.pts,ra,rb), A=T.players[m.a], B=T.players[m.b];
+  const put=(p,o,pts,r,opPts)=>{ p.pts=r2(p.pts+pts); p.time=r3(p.time+r.t); if(r.c) p.correct++; p.played++; p.opp.add(o.id);
+    p.hist.push({round:T.round,opp:o.id,pts,c:r.c,t:r.t,out:pts>opPts?'W':pts<opPts?'L':'D'}); };
+  put(A,B,sc.pa,ra,sc.pb); put(B,A,sc.pb,rb,sc.pa);
+  m.ra=ra; m.rb=rb; m.pa=sc.pa; m.pb=sc.pb; m.kind=sc.kind; m.done=true;
+}
+function startRound(T){
+  if(T.over) return false;
+  const pr=pairRound(T);
+  if(!pr){ T.over=true; T.reason='stuck'; return false; }
+  T.round++; T.matches=[]; T.bye=pr.bye?pr.bye.id:null;
+  pr.pairs.forEach(([a,b],i)=>{
+    const m={board:i+1,a:a.id,b:b.id,q:drawQ(T),ra:null,rb:null,done:false};
+    if(!a.human) m.ra=botAnswer(T,a);
+    if(!b.human) m.rb=botAnswer(T,b);
+    T.matches.push(m);
+    if(m.ra&&m.rb) completeMatch(T,m,m.ra,m.rb);
+  });
+  if(pr.bye){ const p=pr.bye; p.pts=r2(p.pts+T.S.pts.bye); p.time=r3(p.time+T.S.qTime); p.byes++; p.hist.push({round:T.round,opp:null,bye:true,pts:T.S.pts.bye,c:false,t:T.S.qTime,out:'B'}); }
+  return true;
+}
+const humanMatch=T=>T.matches.find(m=>!m.done&&(T.players[m.a].human||T.players[m.b].human))||null;
+function answerHuman(T,res){
+  const m=humanMatch(T); if(!m) return null;
+  if(T.players[m.a].human) m.ra=res; else m.rb=res;
+  completeMatch(T,m,m.ra,m.rb); return m;
+}
+function endRound(T){
+  let dur=0; for(const m of T.matches) dur=Math.max(dur,m.ra.t,m.rb.t);
+  T.elapsed=r3(T.elapsed+dur);
+  const S=T.S;
+  if(S.endMode==='rounds'&&T.round>=S.rounds){ T.over=true; T.reason='rounds'; }
+  else if(S.endMode==='time'&&T.elapsed>=S.minutes*60){ T.over=true; T.reason='time'; }
+  else if(T.round>=maxRounds(S.players)){ T.over=true; T.reason='max'; }
+}
+function simulate(S,seed){
+  const T=createTournament(S,seed); let guard=0;
+  while(!T.over&&guard++<100){
+    if(!startRound(T)) break;
+    const hm=humanMatch(T); if(hm) answerHuman(T,botAnswer(T,T.players[T.humanId]));
+    endRound(T);
+  }
+  return T;
+}
+/*ENGINE_END*/
+
+/* ================= UI ================= */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pf=x=>String(r2(x)), ft=s=>s.toFixed(1)+'s', mmss=s=>{s=Math.round(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+let S=null,T=null,UI={phase:'setup'},timerH=null;
+
+const FIELDS={players:'n',endMode:'s',rounds:'n',minutes:'n',seat:'s',difficulty:'s',qTime:'n',seed:'s',p_win:'n',p_fast:'n',p_slow:'n',p_bye:'n'};
+function readS(){
+  const v={}; for(const k in FIELDS){ const el=$(k); v[k]=FIELDS[k]==='n'?(el.value.trim()===''?NaN:Number(el.value)):el.value.trim(); }
+  return {players:v.players,endMode:v.endMode,rounds:v.rounds,minutes:v.minutes,seat:v.seat,difficulty:v.difficulty,qTime:v.qTime,seed:v.seed,
+    pts:{win:v.p_win,fast:v.p_fast,slow:v.p_slow,bye:v.p_bye}};
+}
+function writeS(s){
+  const m={players:s.players,endMode:s.endMode,rounds:s.rounds,minutes:s.minutes,seat:s.seat,difficulty:s.difficulty,qTime:s.qTime,seed:s.seed,
+    p_win:s.pts.win,p_fast:s.pts.fast,p_slow:s.pts.slow,p_bye:s.pts.bye};
+  for(const k in m) $(k).value=m[k];
+  syncLen();
+}
+function syncLen(){
+  const time=$('endMode').value==='time', n=Number($('players').value);
+  $('roundsField').hidden=time; $('minutesField').hidden=!time;
+  const max=Number.isInteger(n)&&n>=4&&n<=32?maxRounds(n):null;
+  $('lenHint').textContent=time
+    ? 'Counts the time players spend answering: each round lasts as long as its slowest answer. A new round starts only while time remains.'
+    : (max?`Up to ${max} rounds with ${n} players. Nobody plays the same opponent twice, and beyond ${max} rounds a round could run out of fresh opponents.`:'');
+}
+$('players').addEventListener('input',syncLen); $('endMode').addEventListener('change',syncLen);
+function saveS(s){ try{ localStorage.setItem('duelLeagueSettings',JSON.stringify(s)); }catch(e){} }
+function loadS(){ try{ const j=localStorage.getItem('duelLeagueSettings'); if(j){ const s=JSON.parse(j); if(s&&s.pts&&s.players) return s; } }catch(e){} return null; }
+function hashSeed(str){ let h=1779033703^str.length; for(let i=0;i<str.length;i++){ h=Math.imul(h^str.charCodeAt(i),3432918353); h=h<<13|h>>>19; } return (h>>>0)||1; }
+function showErrs(e){ $('errs').innerHTML=e.map(x=>`<div>${esc(x)}</div>`).join(''); }
+
+$('start').onclick=()=>{
+  const s=readS(), e=validate(s); showErrs(e); if(e.length){ $('errs').scrollIntoView({block:'center'}); return; }
+  saveS(s); startLeague(s);
+};
+function startLeague(s){
+  S=s; const seed=S.seed?hashSeed(S.seed):Math.floor(Math.random()*4294967295)+1;
+  T=createTournament(S,seed);
+  $('setup').hidden=true; $('game').hidden=false; scrollTo(0,0);
+  nextRound();
+}
+function nextRound(){
+  stopTimer();
+  if(!startRound(T)){ UI.phase='final'; return render(); }
+  if(humanMatch(T)) UI.phase='pairings';
+  else { endRound(T); UI.phase='results'; }
+  render();
+}
+
+/* ---------- views ---------- */
+const meId=()=>T.humanId;
+function ansText(r){ return r.c?`correct in ${ft(r.t)}`:(r.t>=T.S.qTime-1e-9?'no answer':`wrong after ${ft(r.t)}`); }
+function sideHTML(p,right,sub){ return `<div class="side ${right?'r':''} ${p.human?'you':''}">${esc(p.name)}<span class="sub">${sub}</span></div>`; }
+function boardsHTML(showRes){
+  const rank={}; standingsRows(T).forEach(r=>rank[r.p.id]=r.rank);
+  const html=T.matches.map(m=>{
+    const A=T.players[m.a],B=T.players[m.b], mine=A.human||B.human;
+    const pre=p=>`#${rank[p.id]} · ${pf(p.pts)} pts`;
+    // before the round, show the standing each player came in with; after it, subtract nothing and show the round points
+    const subA=showRes&&m.done?`${ansText(m.ra)}`:pre(A), subB=showRes&&m.done?`${ansText(m.rb)}`:pre(B);
+    const mid=showRes&&m.done?`<div class="mid">${pf(m.pa)} : ${pf(m.pb)}</div>`:`<div class="mid vs">VS</div>`;
+    return `<div class="board ${mine?'mine':''}"><div class="fx">${sideHTML(A,false,subA)}${mid}${sideHTML(B,true,subB)}</div><div class="detail"><span>Board ${m.board}</span></div></div>`;
+  }).join('');
+  const bye=T.bye!=null?`<div class="bye"><b>${esc(T.players[T.bye].name)}</b> has a bye this round and gets ${pf(T.S.pts.bye)} point${T.S.pts.bye===1?'':'s'}.</div>`:'';
+  return `<div class="boards">${html}${bye}</div>`;
+}
+function tableHTML(){
+  const rows=standingsRows(T).map(r=>`<tr class="${r.p.human?'you':''} ${r.rank===1?'lead':''}"><td>${r.tied?'T-':''}${r.rank}</td><td>${esc(r.p.name)}</td><td class="rd">${r.p.played+r.p.byes}</td><td class="pts">${pf(r.p.pts)}</td><td>${r.p.time.toFixed(1)}</td><td>${r.p.correct}</td></tr>`).join('');
+  return `<div class="tw"><table><thead><tr><th>#</th><th>Player</th><th class="rd">Rounds</th><th>Pts</th><th>Time (s)</th><th>Correct</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function headTitle(){
+  if(UI.phase==='final') return 'Final table';
+  return `Round ${T.round}${T.S.endMode==='rounds'?` of ${T.S.rounds}`:''}`;
+}
+function headClock(){
+  if(T.S.endMode==='time') return `Answering time ${mmss(T.elapsed)} of ${mmss(T.S.minutes*60)}`;
+  return `${T.S.players} players`;
+}
+function render(){
+  $('gTitle').textContent=headTitle(); $('gClock').textContent=headClock();
+  const st=$('stage');
+  if(UI.phase==='pairings') st.innerHTML=viewPairings();
+  else if(UI.phase==='question') st.innerHTML=viewQuestion();
+  else if(UI.phase==='results') st.innerHTML=viewResults();
+  else st.innerHTML=viewFinal();
+  if(UI.phase==='question') startTimer();
+}
+function viewPairings(){
+  const m=humanMatch(T), opp=T.players[m.a===meId()?m.b:m.a];
+  return `<div class="card stack"><h2>Your duel</h2><p>You face <b>${esc(opp.name)}</b>. You both get the same question and answer at the same time.</p><div class="row"><button class="btn primary" type="button" data-act="play">Play your duel</button></div></div>
+  <div class="card stack"><h3>Fixtures</h3>${boardsHTML(false)}</div>`;
+}
+function viewQuestion(){
+  const q=UI.q, done=q.done;
+  const opts=q.opts.map((o,k)=>`<button class="btn ${done?(o.i===q.c?'ok':(k===q.pick?'bad':'')):''}" type="button" data-act="ans" data-k="${k}" ${done?'disabled':''}>${k+1}. ${esc(o.t)}</button>`).join('');
+  let fb='';
+  if(done){
+    const m=q.m, A=T.players[m.a].human, mine=A?m.ra:m.rb, theirs=A?m.rb:m.ra, pts=A?m.pa:m.pb, opp=T.players[A?m.b:m.a];
+    fb=`<div class="note"><b>You:</b> ${ansText(mine)}. <b>${esc(opp.name)}:</b> ${ansText(theirs)}.<br>You scored <b>${pf(pts)}</b> point${pts===1?'':'s'}.</div><div class="row"><button class="btn primary" type="button" data-act="cont">Continue</button></div>`;
+  }
+  return `<div class="card stack"><h3>Question</h3><div class="qtext">${esc(q.text)}</div><div class="tbar"><i id="tbar"></i></div><div class="opts">${opts}</div>${fb}</div>`;
+}
+function viewResults(){
+  const mine=T.matches.length&&T.players[meId()]?T.players[meId()]:null;
+  const last=T.over?'See final table':'Next round';
+  return `<div class="card stack"><h3>Round ${T.round} results</h3>${boardsHTML(true)}</div>
+  <div class="card stack"><h3>League table</h3>${tableHTML()}</div>
+  <div class="row"><button class="btn primary" type="button" data-act="next">${last}</button></div>`;
+}
+function reasonText(){
+  return {rounds:`All ${T.S.rounds} rounds were played.`,time:'The time limit was reached.',max:'The most rounds that can be played without a rematch were completed.',
+    stuck:`No new round could be paired without a rematch, so the league ended after round ${T.round}.`}[T.reason]||'';
+}
+function viewFinal(){
+  const rows=standingsRows(T), top=rows.filter(r=>r.rank===1);
+  const champ=top.length>1?`Shared first: ${top.map(r=>esc(r.p.name)).join(', ')}`:`${esc(top[0].p.name)} wins the league`;
+  let mine='';
+  const me=T.players[meId()];
+  if(me){
+    const h=me.hist.map(x=>`<tr><td>${x.round}</td><td>${x.bye?'Bye':esc(T.players[x.opp].name)}</td><td>${x.bye?'-':(x.out==='W'?'Won':x.out==='L'?'Lost':'Drew')}</td><td class="pts">${pf(x.pts)}</td></tr>`).join('');
+    mine=`<div class="card stack"><h3>Your matches</h3><div class="tw"><table><thead><tr><th>Rd</th><th>Opponent</th><th>Result</th><th>Pts</th></tr></thead><tbody>${h}</tbody></table></div></div>`;
+  }
+  return `<div class="card stack"><div class="champ">${champ}</div><p class="muted">${reasonText()}</p></div>
+  <div class="card stack"><h3>League table</h3>${tableHTML()}<p class="hint">Ranked by points, then lowest total answer time, then most correct answers. T- marks players who are level on all three.</p></div>${mine}
+  <div class="row"><button class="btn primary" type="button" data-act="again">Play again</button><button class="btn" type="button" data-act="setup">Change settings</button></div>`;
+}
+
+/* ---------- question phase ---------- */
+function openQuestion(){
+  const m=humanMatch(T), src=QUESTIONS[m.q];
+  const opts=shuffle(src.a.map((t,i)=>({t,i})),Math.random);
+  UI.q={m,text:src.q,opts,c:src.c,start:performance.now(),done:false,pick:-1};
+  UI.phase='question'; render();
+}
+function submitAnswer(k){
+  const q=UI.q; if(!q||q.done) return;
+  const secs=Math.min(T.S.qTime,(performance.now()-q.start)/1000);
+  const timeout=k<0||secs>=T.S.qTime;
+  const res=timeout?{c:false,t:T.S.qTime}:{c:q.opts[k].i===q.c,t:r3(Math.max(.05,secs))};
+  q.done=true; q.pick=k; q.m=answerHuman(T,res); stopTimer(); render();
+}
+function startTimer(){
+  stopTimer();
+  timerH=setInterval(()=>{
+    const q=UI.q; if(!q||q.done||UI.phase!=='question') return stopTimer();
+    const left=T.S.qTime-(performance.now()-q.start)/1000, bar=$('tbar');
+    if(bar) bar.style.width=Math.max(0,left/T.S.qTime*100)+'%';
+    if(left<=0) submitAnswer(-1);
+  },100);
+}
+function stopTimer(){ if(timerH){ clearInterval(timerH); timerH=null; } }
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]'); if(!b||!T) return;
+  const a=b.dataset.act;
+  if(a==='play') openQuestion();
+  else if(a==='ans') submitAnswer(Number(b.dataset.k));
+  else if(a==='cont'){ endRound(T); UI.phase='results'; render(); }
+  else if(a==='next') nextRound();
+  else if(a==='again'){ const s=clone(S); s.seed=''; startLeague(s); }
+  else if(a==='setup'){ stopTimer(); $('game').hidden=true; $('setup').hidden=false; scrollTo(0,0); }
+});
+document.addEventListener('keydown',e=>{
+  if(!T||UI.phase!=='question'||!UI.q||UI.q.done) return;
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+  const k='1234'.indexOf(e.key); if(k>=0&&k<UI.q.opts.length) submitAnswer(k);
+});
+
+writeS(loadS()||clone(DEFAULTS));
+</script>
+</body>
+</html>

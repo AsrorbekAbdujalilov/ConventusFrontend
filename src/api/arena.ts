@@ -75,10 +75,17 @@ export const arenaApi = {
     })
   },
 
-  startGame: async (code: string): Promise<{ detail: string; code: string }> => {
-    return apiClient<{ detail: string; code: string }>(`/api/arena/game/${code}/start/`, {
-      method: 'POST',
-    })
+  startGame: async (
+    code: string,
+    payload?: { game_mode?: string; game_settings?: Record<string, any> }
+  ): Promise<{ detail: string; code: string; game_mode?: string; game_settings?: Record<string, any> }> => {
+    return apiClient<{ detail: string; code: string; game_mode?: string; game_settings?: Record<string, any> }>(
+      `/api/arena/game/${code}/start/`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload || {}),
+      }
+    )
   },
 
   stopGame: async (code: string): Promise<{ detail: string; code: string }> => {
@@ -116,10 +123,13 @@ export const arenaApi = {
 
 // --- WebSocket Real-Time Connection Helper ---
 export interface ArenaWsCallbacks {
-  onPlayerJoined?: (player: { display_name: string; player_count: number }) => void
+  onPlayerJoined?: (
+    player: { display_name: string; player_count: number; id?: number },
+    roster?: Player[]
+  ) => void
   onPlayerLeft?: (player: { display_name: string }) => void
-  onGameStarted?: (code: string) => void
-  onGameStopped?: (code: string) => void
+  onGameStarted?: (payload: { code: string; game_mode?: string; game_settings?: Record<string, any> }) => void
+  onGameStopped?: (payload: { code: string; leaderboard?: { display_name: string; points: number }[] } | string) => void
   onLeaderboardUpdate?: (leaderboard: { display_name: string; points: number }[]) => void
   onError?: (err: Event) => void
   onOpen?: () => void
@@ -158,16 +168,24 @@ export function connectArenaWebSocket(
         const data = JSON.parse(event.data)
         switch (data.type) {
           case 'player_joined':
-            if (callbacks.onPlayerJoined) callbacks.onPlayerJoined(data.player)
+            if (callbacks.onPlayerJoined) callbacks.onPlayerJoined(data.player, data.roster)
             break
           case 'player_left':
             if (callbacks.onPlayerLeft) callbacks.onPlayerLeft(data.player)
             break
           case 'game_started':
-            if (callbacks.onGameStarted) callbacks.onGameStarted(data.code)
+            if (callbacks.onGameStarted) {
+              callbacks.onGameStarted({
+                code: data.code,
+                game_mode: data.game_mode,
+                game_settings: data.game_settings,
+              })
+            }
             break
           case 'game_stopped':
-            if (callbacks.onGameStopped) callbacks.onGameStopped(data.code)
+            if (callbacks.onGameStopped) {
+              callbacks.onGameStopped({ code: data.code, leaderboard: data.leaderboard })
+            }
             break
           case 'leaderboard_update':
             if (callbacks.onLeaderboardUpdate) callbacks.onLeaderboardUpdate(data.leaderboard)

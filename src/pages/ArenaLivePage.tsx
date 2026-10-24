@@ -3,6 +3,9 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { arenaApi, connectArenaWebSocket } from '../api'
 import type { Player, Question, LeaderboardEntry } from '../api/types'
+import { GameIframeView } from '../components/games/GameIframeView'
+import { HostGameTracker } from '../components/games/HostGameTracker'
+import type { GameModeId } from '../pages/GameTypeSelectPage'
 
 export function ArenaLivePage() {
   const { code: routeCode } = useParams<{ code?: string }>()
@@ -54,6 +57,16 @@ export function ArenaLivePage() {
   const [copiedPin, setCopiedPin] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
+  // Game Mode & Settings (Default: classic)
+  const [gameMode, setGameMode] = useState<GameModeId>('classic')
+  const [gameSettings, setGameSettings] = useState<Record<string, any>>({})
+
+  // Strict Screen Separation:
+  // When isPlayingGameTurn === true: QUIZ IS HIDDEN, GAME IS LOADED
+  // When isPlayingGameTurn === false: GAME IS HIDDEN, QUIZ IS LOADED
+  const [isPlayingGameTurn, setIsPlayingGameTurn] = useState(false)
+  const [turnSecondsRemaining, setTurnSecondsRemaining] = useState<number>(15)
+
   // In-Game Play State
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentQIndex, setCurrentQIndex] = useState(0)
@@ -61,13 +74,27 @@ export function ArenaLivePage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [answerResult, setAnswerResult] = useState<{ isCorrect: boolean; choiceId: number } | null>(null)
   const [myScore, setMyScore] = useState(0)
-  const [secondsRemaining, setSecondsRemaining] = useState<number>(30)
+  const [questionSecondsRemaining, setQuestionSecondsRemaining] = useState<number>(30)
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
 
-  const timerRef = useRef<number | null>(null)
+  const questionTimerRef = useRef<number | null>(null)
+  const turnTimerRef = useRef<number | null>(null)
   const wsCleanupRef = useRef<(() => void) | null>(null)
 
-  // Fetch Questions for play
+  // Refresh Leaderboard
+  const refreshLeaderboard = useCallback(async () => {
+    if (!code) return
+    try {
+      const lb = await arenaApi.getLeaderboard(code, playerToken || undefined)
+      if (lb && lb.leaderboard) {
+        setLeaderboard(lb.leaderboard)
+      }
+    } catch {
+      // ignore
+    }
+  }, [code, playerToken])
+
+  // Fetch Questions for play (anti-cheat: choices omit is_correct)
   const loadGameQuestions = useCallback(async () => {
     if (!code) return
     try {
@@ -75,37 +102,40 @@ export function ArenaLivePage() {
       const qList = await arenaApi.getGameQuestions(code, token)
       setQuestions(qList)
       if (qList.length > 0) {
-        setSecondsRemaining(qList[0].time_seconds || 30)
+        setQuestionSecondsRemaining(qList[0].time_seconds || 30)
       }
     } catch {
-      // If host or questions not yet loaded
+      // host preview or awaiting questions
     }
   }, [code, playerToken])
 
-  // Timer Tick
+  // Active Question calculation: IF TIME OR INDEX > QUESTIONS LENGTH -> REPEAT IN LOOP!
+  const activeQuestionIndex = questions.length > 0 ? currentQIndex % questions.length : 0
+  const curQ = questions[activeQuestionIndex]
+  const questionRepeatCount = questions.length > 0 ? Math.floor(currentQIndex / questions.length) + 1 : 1
+
+  // Advance to next question cleanly
+  const advanceToNextQuestion = useCallback(() => {
+    if (turnTimerRef.current) clearInterval(turnTimerRef.current)
+    setIsPlayingGameTurn(false)
+    setSelectedChoiceId(null)
+    setAnswerResult(null)
+    setCurrentQIndex((prev) => prev + 1)
+    setQuestionSecondsRemaining((questions[0]?.time_seconds) || 30)
+  }, [questions])
+
+  // Question Countdown Loop (runs ONLY when Quiz is visible)
   useEffect(() => {
-    if (stage !== 'play' || questions.length === 0) return
+    if (stage !== 'play' || isPlayingGameTurn || questions.length === 0 || isHost) return
 
-    if (timerRef.current) clearInterval(timerRef.current)
+    if (questionTimerRef.current) clearInterval(questionTimerRef.current)
 
-    timerRef.current = window.setInterval(() => {
-      setSecondsRemaining((prev) => {
+    questionTimerRef.current = window.setInterval(() => {
+      setQuestionSecondsRemaining((prev) => {
         if (prev <= 1) {
-          clearInterval(timerRef.current!)
-          // Timeout: advance or finish
+          clearInterval(questionTimerRef.current!)
           setTimeout(() => {
-            setCurrentQIndex((curr) => {
-              if (curr + 1 < questions.length) {
-                const nextQ = questions[curr + 1]
-                setSelectedChoiceId(null)
-                setAnswerResult(null)
-                setSecondsRemaining(nextQ.time_seconds || 30)
-                return curr + 1
-              } else {
-                setStage('podium')
-                return curr
-              }
-            })
+            advanceToNextQuestion()
           }, 1200)
           return 0
         }
@@ -114,18 +144,41 @@ export function ArenaLivePage() {
     }, 1000)
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current)
+      if (questionTimerRef.current) clearInterval(questionTimerRef.current)
     }
-  }, [stage, currentQIndex, questions])
+  }, [stage, isPlayingGameTurn, currentQIndex, questions, isHost, advanceToNextQuestion])
 
-  // Initial Sync and WebSocket setup
+  // Game Turn Countdown Loop (runs ONLY when Game is visible)
+  useEffect(() => {
+    if (!isPlayingGameTurn) return
+
+    setTurnSecondsRemaining(15)
+    if (turnTimerRef.current) clearInterval(turnTimerRef.current)
+
+    turnTimerRef.current = window.setInterval(() => {
+      setTurnSecondsRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(turnTimerRef.current!)
+          advanceToNextQuestion()
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => {
+      if (turnTimerRef.current) clearInterval(turnTimerRef.current)
+    }
+  }, [isPlayingGameTurn, advanceToNextQuestion])
+
+  // Initial Sync, Polling Fallback, and WebSocket setup
   useEffect(() => {
     if (!code) {
       navigate('/arena?tab=join')
       return
     }
 
-    // 1. Fetch Players in Lobby
+    // 1. Initial Fetch of Players in Lobby
     arenaApi.getGamePlayers(code)
       .then((roster) => setPlayerRoster(roster))
       .catch(() => {})
@@ -133,6 +186,8 @@ export function ArenaLivePage() {
     // 2. Fetch Status
     arenaApi.getGameStatus(code, playerToken || undefined)
       .then((status) => {
+        if (status.game_mode) setGameMode(status.game_mode as GameModeId)
+        if (status.game_settings) setGameSettings(status.game_settings)
         if (status.is_started) {
           setStage('play')
           loadGameQuestions()
@@ -140,32 +195,61 @@ export function ArenaLivePage() {
       })
       .catch(() => {})
 
-    // 3. Connect WebSocket for Real-Time synchronization
-    const cleanup = connectArenaWebSocket(code, {
-      onPlayerJoined: (payload) => {
-        arenaApi.getGamePlayers(code)
-          .then((r) => setPlayerRoster(r))
-          .catch(() => {
-            setPlayerRoster((prev) => [
-              ...prev,
-              { id: Date.now(), display_name: payload.display_name, points: 0, joined_at: '' },
-            ])
+    // 3. Polling safety-net while in 'lobby' (syncs host & player without refresh)
+    const lobbySyncInterval = window.setInterval(() => {
+      if (stage === 'lobby') {
+        arenaApi.getGamePlayers(code).then(setPlayerRoster).catch(() => {})
+        arenaApi.getGameStatus(code, playerToken || undefined)
+          .then((status) => {
+            if (status.game_mode) setGameMode(status.game_mode as GameModeId)
+            if (status.game_settings) setGameSettings(status.game_settings)
+            if (status.is_started) {
+              setStage('play')
+              loadGameQuestions()
+            }
           })
+          .catch(() => {})
+      }
+    }, 2000)
+
+    // 4. Connect WebSocket for Instant Real-Time synchronization
+    const cleanup = connectArenaWebSocket(code, {
+      onPlayerJoined: (payload, roster) => {
+        if (roster && roster.length > 0) {
+          setPlayerRoster(roster)
+        } else {
+          arenaApi.getGamePlayers(code)
+            .then((r) => setPlayerRoster(r))
+            .catch(() => {
+              setPlayerRoster((prev) => [
+                ...prev,
+                { id: Date.now(), display_name: payload.display_name, points: 0, joined_at: '' },
+              ])
+            })
+        }
       },
       onPlayerLeft: () => {
-        arenaApi.getGamePlayers(code)
-          .then((r) => setPlayerRoster(r))
-          .catch(() => {})
+        arenaApi.getGamePlayers(code).then((r) => setPlayerRoster(r)).catch(() => {})
       },
-      onGameStarted: () => {
+      onGameStarted: (payload) => {
+        if (payload.game_mode) {
+          setGameMode(payload.game_mode as GameModeId)
+        }
+        if (payload.game_settings) {
+          setGameSettings(payload.game_settings)
+        }
         setStage('play')
         loadGameQuestions()
       },
-      onGameStopped: () => {
+      onGameStopped: (payload) => {
         setStage('podium')
-        arenaApi.getLeaderboard(code, playerToken || undefined)
-          .then((lb) => setLeaderboard(lb.leaderboard))
-          .catch(() => {})
+        if (typeof payload === 'object' && payload?.leaderboard && payload.leaderboard.length > 0) {
+          setLeaderboard(payload.leaderboard)
+        } else {
+          arenaApi.getLeaderboard(code, playerToken || undefined)
+            .then((lb) => setLeaderboard(lb.leaderboard))
+            .catch(() => {})
+        }
       },
       onLeaderboardUpdate: (data) => {
         setLeaderboard(data)
@@ -176,48 +260,43 @@ export function ArenaLivePage() {
 
     return () => {
       if (cleanup) cleanup()
-      if (timerRef.current) clearInterval(timerRef.current)
+      if (questionTimerRef.current) clearInterval(questionTimerRef.current)
+      if (turnTimerRef.current) clearInterval(turnTimerRef.current)
+      clearInterval(lobbySyncInterval)
     }
-  }, [code, playerToken, navigate, loadGameQuestions])
+  }, [code, playerToken, navigate, loadGameQuestions, stage])
 
-  // Host: Start Game
-  const handleStartGame = async () => {
-    if (!code || !isHost) return
-    try {
-      await arenaApi.startGame(code)
-      setStage('play')
-      loadGameQuestions()
-    } catch (err: unknown) {
-      setErrorMsg((err as Error)?.message || 'Failed to start game.')
-    }
+  // Host: Navigate to Choose Game Type
+  const handleOpenChooseMode = () => {
+    navigate(`/arena/live/${code}/choose-mode`, {
+      state: { isHost: true },
+    })
   }
 
   // Host: Stop / End Game
   const handleStopGame = async () => {
     if (!code || !isHost) return
-    if (!window.confirm('Are you sure you want to end this game session?')) return
+    if (!window.confirm('Are you sure you want to end this game session and show the podium?')) return
     try {
-      await arenaApi.stopGame(code)
+      const res = await arenaApi.stopGame(code)
       setStage('podium')
-      try {
-        const lb = await arenaApi.getLeaderboard(code, playerToken || undefined)
-        setLeaderboard(lb.leaderboard)
-      } catch {
-        // ignore
+      if ((res as any)?.leaderboard) {
+        setLeaderboard((res as any).leaderboard)
+      } else {
+        await refreshLeaderboard()
       }
     } catch (err: unknown) {
       setErrorMsg((err as Error)?.message || 'Failed to stop game.')
     }
   }
 
-  // Player: Submit Answer Choice
+  // Player: Submit Answer Choice (Anti-Cheat Server Validation)
   const handleSelectChoice = async (choiceId: number) => {
-    if (selectedChoiceId !== null || isSubmitting || !playerToken) return
+    if (selectedChoiceId !== null || isSubmitting || !playerToken || isHost || !curQ) return
 
     setSelectedChoiceId(choiceId)
     setIsSubmitting(true)
 
-    const curQ = questions[currentQIndex]
     try {
       const res = await arenaApi.submitAnswer(code, {
         token: playerToken,
@@ -226,27 +305,22 @@ export function ArenaLivePage() {
       })
 
       setAnswerResult({ isCorrect: res.is_correct, choiceId })
+
       if (res.is_correct) {
         setMyScore((s) => s + 100)
-      }
 
-      // Automatically advance to next question after a brief delay
-      setTimeout(() => {
-        if (currentQIndex + 1 < questions.length) {
-          const nextQ = questions[currentQIndex + 1]
-          setCurrentQIndex((i) => i + 1)
-          setSelectedChoiceId(null)
-          setAnswerResult(null)
-          setSecondsRemaining(nextQ.time_seconds || 30)
-        } else {
-          setStage('podium')
-          arenaApi.getLeaderboard(code, playerToken)
-            .then((lb) => setLeaderboard(lb.leaderboard))
-            .catch(() => {})
-        }
-      }, 1500)
+        // CORRECT ANSWER: HIDE QUIZ, LOAD GAME ON SCREEN
+        setTimeout(() => {
+          setIsPlayingGameTurn(true)
+        }, 1100)
+      } else {
+        // INCORRECT ANSWER: Turn locked. Advance after brief feedback.
+        setTimeout(() => {
+          advanceToNextQuestion()
+        }, 2200)
+      }
     } catch {
-      // Submission error handling
+      // Submission fallback
     } finally {
       setIsSubmitting(false)
     }
@@ -271,17 +345,28 @@ export function ArenaLivePage() {
     }
   }
 
-  const curQ = questions[currentQIndex]
+  // Guaranteed Podium Rankings
+  const sortedRankings = (() => {
+    if (leaderboard && leaderboard.length > 0) {
+      return leaderboard
+    }
+    if (playerRoster && playerRoster.length > 0) {
+      return [...playerRoster]
+        .map((p) => ({ display_name: p.display_name, points: (p as any).points || 0 }))
+        .sort((a, b) => b.points - a.points)
+    }
+    return [{ display_name: myPlayerName || 'Player 1', points: myScore }]
+  })()
 
   return (
     <div className="arena-live-room">
-      {/* ── TOP IMMERSIVE HUD (NO NAVBAR / NO FOOTER) ── */}
+      {/* ── TOP IMMERSIVE HUD ── */}
       <header className="arena-live-hud">
         <div className="arena-live-hud-brand">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
           </svg>
-          <span>Conventus Live Match</span>
+          <span>Conventus Arena</span>
         </div>
 
         <div className="arena-live-hud-center">
@@ -319,7 +404,7 @@ export function ArenaLivePage() {
         </div>
       </header>
 
-      {/* ── IMMERSIVE WORKSPACE: LOBBY, PLAY, OR PODIUM ── */}
+      {/* ── MAIN WORKSPACE: LOBBY, PLAY, OR PODIUM ── */}
       <main className="arena-live-content">
         {errorMsg && (
           <div className="note error" style={{ width: '100%', marginBottom: '1.5rem' }}>
@@ -362,16 +447,16 @@ export function ArenaLivePage() {
                   <button
                     type="button"
                     className="btn ok big"
-                    onClick={handleStartGame}
+                    onClick={handleOpenChooseMode}
                     style={{ fontWeight: 700, paddingInline: '1.5rem' }}
                   >
-                    Start Game Now ▶
+                    Choose Game Mode & Settings ▶
                   </button>
                 </div>
               ) : (
                 <span style={{ color: 'var(--muted)', fontSize: '0.9375rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span className="arena-pulse-dot" />
-                  Waiting for host to launch the match...
+                  Waiting for host to configure game mode and launch the match...
                 </span>
               )}
             </div>
@@ -394,170 +479,233 @@ export function ArenaLivePage() {
           </div>
         )}
 
-        {/* 2. REAL-TIME QUIZ PLAY */}
+        {/* 2. REAL-TIME PLAY STAGE */}
         {stage === 'play' && (
           <div className="arena-play-container" style={{ width: '100%' }}>
-            {/* Countdown Timer bar */}
-            <div className="arena-timer-bar">
-              <div
-                className={`arena-timer-fill ${secondsRemaining <= 5 ? 'urgent' : ''}`}
-                style={{
-                  width: `${(secondsRemaining / (curQ?.time_seconds || 30)) * 100}%`,
-                }}
+            {/* ── HOST POV: CAN ONLY TRACK GAMES (CANNOT PLAY) ── */}
+            {isHost ? (
+              <HostGameTracker
+                gameMode={gameMode}
+                settings={gameSettings}
+                players={playerRoster}
+                leaderboard={leaderboard}
+                onStopGame={handleStopGame}
+                currentQIndex={currentQIndex}
+                totalQuestions={questions.length}
               />
-            </div>
+            ) : (
+              /* ── PLAYER POV: STRICT SCREEN SEPARATION ── */
+              <div style={{ width: '100%' }}>
+                {isPlayingGameTurn ? (
+                  /* SCREEN B: QUIZ IS HIDDEN, GAME SCREEN IS LOADED */
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.85rem 1.25rem',
+                        background: 'linear-gradient(90deg, var(--primary-soft, #eef2ff), var(--surface))',
+                        border: '1px solid var(--primary)',
+                        borderRadius: 'var(--radius-lg)',
+                        flexWrap: 'wrap',
+                        gap: '0.75rem',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '1.25rem' }}>🎉</span>
+                        <span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '1rem' }}>
+                          Correct! Quiz hidden — Take your game turn!
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn primary small"
+                        style={{ fontWeight: 700 }}
+                        onClick={advanceToNextQuestion}
+                      >
+                        Done with Move / Next Question ➔
+                      </button>
+                    </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontFamily: 'var(--f-mono)', fontSize: '0.9375rem', color: 'var(--muted)' }}>
-                Question {currentQIndex + 1} of {questions.length}
-              </span>
-              <span style={{ fontFamily: 'var(--f-mono)', fontWeight: 700, color: secondsRemaining <= 5 ? 'var(--danger)' : 'var(--text)' }}>
-                ⏱️ {secondsRemaining}s remaining
-              </span>
-            </div>
+                    <GameIframeView
+                      gameMode={gameMode}
+                      settings={gameSettings}
+                      isHost={false}
+                      myPlayerName={myPlayerName}
+                      turnActive={true}
+                      turnSecondsRemaining={turnSecondsRemaining}
+                      onTurnComplete={advanceToNextQuestion}
+                    />
+                  </div>
+                ) : (
+                  /* SCREEN A: GAME IS HIDDEN, QUIZ SCREEN IS LOADED */
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%' }}>
+                    {/* Timer progress bar */}
+                    <div className="arena-timer-bar">
+                      <div
+                        className={`arena-timer-fill ${questionSecondsRemaining <= 5 ? 'urgent' : ''}`}
+                        style={{
+                          width: `${(questionSecondsRemaining / (curQ?.time_seconds || 30)) * 100}%`,
+                        }}
+                      />
+                    </div>
 
-            {/* Question Card */}
-            <div className="arena-q-card">
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, lineHeight: 1.3 }}>
-                {curQ?.text || 'Loading question...'}
-              </h2>
-            </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontFamily: 'var(--f-mono)', fontSize: '0.9375rem', color: 'var(--muted)' }}>
+                        Question {activeQuestionIndex + 1} of {questions.length || 1}
+                        {questionRepeatCount > 1 && (
+                          <span style={{ marginLeft: '0.5rem', color: 'var(--primary)', fontWeight: 600 }}>
+                            (Cycle #{questionRepeatCount})
+                          </span>
+                        )}
+                      </span>
+                      <span style={{ fontFamily: 'var(--f-mono)', fontWeight: 700, color: questionSecondsRemaining <= 5 ? 'var(--danger)' : 'var(--text)' }}>
+                        ⏱️ {questionSecondsRemaining}s remaining
+                      </span>
+                    </div>
 
-            {/* 4 Large Choice Buttons */}
-            <div className="arena-choices-grid">
-              {(curQ?.choices || []).map((choice, cIdx) => {
-                const isSelected = selectedChoiceId === choice.id
-                let stateClass = ''
-                if (answerResult) {
-                  if (choice.id === answerResult.choiceId) {
-                    stateClass = answerResult.isCorrect ? 'correct' : 'wrong'
-                  }
-                } else if (isSelected) {
-                  stateClass = 'selected'
-                }
+                    {/* Question Card */}
+                    <div className="arena-q-card">
+                      <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0, lineHeight: 1.3 }}>
+                        {curQ?.text || 'Loading question challenge...'}
+                      </h2>
+                    </div>
 
-                return (
-                  <button
-                    key={choice.id}
-                    type="button"
-                    className={`arena-choice-btn arena-choice-${cIdx % 4} ${stateClass}`}
-                    disabled={selectedChoiceId !== null || isSubmitting || isHost}
-                    onClick={() => handleSelectChoice(choice.id)}
-                  >
-                    <span className={`arena-choice-letter letter-${['a', 'b', 'c', 'd'][cIdx % 4]}`}>
-                      {['A', 'B', 'C', 'D'][cIdx % 4]}
-                    </span>
-                    <span style={{ flex: 1, textAlign: 'left', fontWeight: 600, fontSize: '1.0625rem' }}>
-                      {choice.text}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
+                    {/* 4 Large Choice Buttons */}
+                    <div className="arena-choices-grid">
+                      {(curQ?.choices || []).map((choice, cIdx) => {
+                        const isSelected = selectedChoiceId === choice.id
+                        let stateClass = ''
+                        if (answerResult) {
+                          if (choice.id === answerResult.choiceId) {
+                            stateClass = answerResult.isCorrect ? 'correct' : 'wrong'
+                          }
+                        } else if (isSelected) {
+                          stateClass = 'selected'
+                        }
 
-            {/* Instant Answer Feedback */}
-            {answerResult && (
-              <div className={`arena-result-banner ${answerResult.isCorrect ? 'correct' : 'wrong'}`}>
-                {answerResult.isCorrect ? '🎉 Correct! +100 Points!' : '❌ Incorrect recall'}
-              </div>
-            )}
+                        return (
+                          <button
+                            key={choice.id}
+                            type="button"
+                            className={`arena-choice-btn arena-choice-${cIdx % 4} ${stateClass}`}
+                            disabled={selectedChoiceId !== null || isSubmitting}
+                            onClick={() => handleSelectChoice(choice.id)}
+                          >
+                            <span className={`arena-choice-letter letter-${['a', 'b', 'c', 'd'][cIdx % 4]}`}>
+                              {['A', 'B', 'C', 'D'][cIdx % 4]}
+                            </span>
+                            <span style={{ flex: 1, textAlign: 'left', fontWeight: 600, fontSize: '1.0625rem' }}>
+                              {choice.text}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
 
-            {isHost && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', padding: '1rem', background: 'var(--surface)', borderRadius: 'var(--radius-lg)' }}>
-                <span style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>
-                  Host Mode: Players are submitting their live responses
-                </span>
-                <button
-                  type="button"
-                  className="btn line danger"
-                  onClick={handleStopGame}
-                >
-                  End Match Early
-                </button>
+                    {/* Feedback Banner */}
+                    {answerResult && (
+                      <div className={`arena-result-banner ${answerResult.isCorrect ? 'correct' : 'wrong'}`}>
+                        {answerResult.isCorrect
+                          ? '🎉 Correct! Loading game environment on full screen...'
+                          : '❌ Incorrect answer! Game turn locked for this round.'}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
         )}
 
-        {/* 3. PODIUM CELEBRATION & FINAL LEADERBOARD */}
+        {/* 3. PODIUM CELEBRATION */}
         {stage === 'podium' && (
           <div className="arena-podium-container" style={{ width: '100%' }}>
             <div style={{ textAlign: 'center' }}>
-              <h2 style={{ fontSize: '2rem', fontWeight: 700, margin: '0 0 0.5rem' }}>
+              <h2 style={{ fontSize: '2.5rem', fontWeight: 800, margin: '0 0 0.5rem', letterSpacing: '-0.02em' }}>
                 🏆 Match Complete!
               </h2>
-              <p style={{ color: 'var(--muted)', margin: 0 }}>
-                Final standings for Session PIN #{code}
+              <p style={{ color: 'var(--muted)', margin: 0, fontSize: '1.05rem' }}>
+                Final Championship Standings for Session PIN #{code}
               </p>
             </div>
 
-            {/* Podium for Top 3 */}
+            {/* Podium for Top 3 with 🥇🥈🥉 */}
             <div className="arena-podium-wrap">
               {/* 2nd Place */}
               <div className="arena-podium-col">
-                <span style={{ fontWeight: 600, fontSize: '0.9375rem' }}>
-                  {leaderboard[1]?.display_name || '—'}
+                <span style={{ fontSize: '2rem' }}>🥈</span>
+                <span style={{ fontWeight: 700, fontSize: '1rem', marginTop: '0.25rem' }}>
+                  {sortedRankings[1]?.display_name || 'Runner Up'}
                 </span>
-                <span style={{ fontSize: '0.8125rem', color: 'var(--muted)', fontFamily: 'var(--f-mono)' }}>
-                  {leaderboard[1] ? `${leaderboard[1].points} pts` : '—'}
+                <span style={{ fontSize: '0.875rem', color: 'var(--muted)', fontFamily: 'var(--f-mono)', fontWeight: 600 }}>
+                  {sortedRankings[1] ? `${sortedRankings[1].points} pts` : '—'}
                 </span>
                 <div className="arena-podium-box podium-second">2</div>
               </div>
 
               {/* 1st Place */}
               <div className="arena-podium-col">
-                <span style={{ fontSize: '1.5rem' }}>👑</span>
-                <span style={{ fontWeight: 700, fontSize: '1.125rem', color: 'var(--primary)' }}>
-                  {leaderboard[0]?.display_name || myPlayerName || 'Champion'}
+                <span style={{ fontSize: '2.5rem' }}>👑</span>
+                <span style={{ fontWeight: 800, fontSize: '1.3rem', color: 'var(--primary)', marginTop: '0.25rem' }}>
+                  {sortedRankings[0]?.display_name || 'Champion'}
                 </span>
-                <span style={{ fontSize: '0.875rem', fontWeight: 600, fontFamily: 'var(--f-mono)' }}>
-                  {leaderboard[0] ? `${leaderboard[0].points} pts` : `${myScore} pts`}
+                <span style={{ fontSize: '1rem', fontWeight: 700, fontFamily: 'var(--f-mono)' }}>
+                  {sortedRankings[0] ? `${sortedRankings[0].points} pts` : `${myScore} pts`}
                 </span>
                 <div className="arena-podium-box podium-first">1</div>
               </div>
 
               {/* 3rd Place */}
               <div className="arena-podium-col">
-                <span style={{ fontWeight: 600, fontSize: '0.9375rem' }}>
-                  {leaderboard[2]?.display_name || '—'}
+                <span style={{ fontSize: '2rem' }}>🥉</span>
+                <span style={{ fontWeight: 700, fontSize: '1rem', marginTop: '0.25rem' }}>
+                  {sortedRankings[2]?.display_name || '3rd Place'}
                 </span>
-                <span style={{ fontSize: '0.8125rem', color: 'var(--muted)', fontFamily: 'var(--f-mono)' }}>
-                  {leaderboard[2] ? `${leaderboard[2].points} pts` : '—'}
+                <span style={{ fontSize: '0.875rem', color: 'var(--muted)', fontFamily: 'var(--f-mono)', fontWeight: 600 }}>
+                  {sortedRankings[2] ? `${sortedRankings[2].points} pts` : '—'}
                 </span>
                 <div className="arena-podium-box podium-third">3</div>
               </div>
             </div>
 
             {/* Leaderboard Table */}
-            <table className="arena-score-table">
+            <table className="arena-score-table" style={{ width: '100%', maxWidth: '38rem', marginTop: '1.5rem' }}>
+              <thead>
+                <tr style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>
+                  <th style={{ textAlign: 'left', padding: '0.5rem' }}>Rank</th>
+                  <th style={{ textAlign: 'left', padding: '0.5rem' }}>Player</th>
+                  <th style={{ textAlign: 'right', padding: '0.5rem' }}>Score</th>
+                </tr>
+              </thead>
               <tbody>
-                {(leaderboard.length > 0
-                  ? leaderboard
-                  : myPlayerName
-                  ? [{ display_name: myPlayerName, points: myScore }]
-                  : []
-                ).map((entry, idx) => (
+                {sortedRankings.map((entry, idx) => (
                   <tr key={idx} className="arena-score-row">
-                    <td style={{ width: '3rem' }}>#{idx + 1}</td>
-                    <td>{entry.display_name}</td>
-                    <td>{entry.points} pts</td>
+                    <td style={{ width: '4rem', fontWeight: 700 }}>
+                      {idx === 0 ? '🥇 1st' : idx === 1 ? '🥈 2nd' : idx === 2 ? '🥉 3rd' : `#${idx + 1}`}
+                    </td>
+                    <td style={{ fontWeight: 600 }}>{entry.display_name}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 700, fontFamily: 'var(--f-mono)', color: 'var(--primary)' }}>
+                      {entry.points} pts
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
             {/* Actions */}
-            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '2rem', justifyContent: 'center', flexWrap: 'wrap' }}>
               <button
                 type="button"
-                className="btn primary"
+                className="btn primary big"
                 onClick={() => navigate('/arena?tab=join')}
               >
                 Join Another Game
               </button>
               <button
                 type="button"
-                className="btn line"
+                className="btn line big"
                 onClick={() => navigate('/arena?tab=host')}
               >
                 Host New Match

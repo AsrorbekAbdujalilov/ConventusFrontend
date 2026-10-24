@@ -15,9 +15,9 @@ export const NAV_ITEMS = [
     key: 'classroom',
     title: 'Classroom',
     items: [
-      { title: 'Open classroom', desc: 'Start a room for your class or study group', href: '/' },
-      { title: 'Join classroom', desc: 'Enter with a code from your teacher', href: '/' },
-      { title: 'Discover', desc: 'Browse public classrooms', href: '/' },
+      { title: 'Open classroom', desc: 'Start a room for your class or study group', href: '/classrooms' },
+      { title: 'Join classroom', desc: 'Enter with a room ID from your teacher', href: '/classrooms' },
+      { title: 'Classroom hub', desc: 'Manage messages, tasks and student activity', href: '/classrooms' },
     ],
   },
   {

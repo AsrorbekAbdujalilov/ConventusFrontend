@@ -25,6 +25,7 @@ export interface UserProfile {
   subscription?: SubscriptionChoice | string;
   subjects: Subject[];
   active_palette_id?: string;
+  groups?: string[];
 }
 
 export interface UserProfileUpdatePayload {
@@ -82,6 +83,46 @@ export interface UserProfileUpdateResponse {
   user: UserProfile;
 }
 
+export interface ClassroomMember {
+  id: number;
+  username: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+}
+
+export interface Classroom {
+  id: number;
+  name: string;
+  description: string;
+  join_code?: string;
+  teacher: ClassroomMember;
+  students: ClassroomMember[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClassroomMessage {
+  id: number;
+  classroom: number;
+  sender: ClassroomMember;
+  message: string;
+  created_at: string;
+}
+
+export interface ClassroomTask {
+  id: number;
+  classroom: number;
+  created_by: ClassroomMember;
+  title: string;
+  description: string;
+  due_date?: string | null;
+  assignees: ClassroomMember[];
+  assignee_ids?: number[];
+  completed: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface RegisterPayload {
   username: string;
@@ -168,6 +209,8 @@ export interface Game {
   quiz_title: string;
   host: string;
   game_type: 'solo' | 'team';
+  game_mode?: 'pharaoh' | 'tictactoe' | 'academic_deception' | 'duel_league' | 'land_rush' | 'classic';
+  game_settings?: Record<string, any>;
   duration: number;
   is_active: boolean;
   is_started: boolean;
@@ -193,6 +236,8 @@ export interface GameStatusResponse {
   code: string;
   is_active: boolean;
   is_started: boolean;
+  game_mode?: 'pharaoh' | 'tictactoe' | 'academic_deception' | 'duel_league' | 'land_rush' | 'classic';
+  game_settings?: Record<string, any>;
   player_count: number;
   remaining_seconds: number | null;
 }

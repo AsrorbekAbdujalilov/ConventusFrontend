@@ -1,0 +1,1033 @@
+<title>Academic Deception</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Special+Elite&display=swap">
+<style>
+/* Layout: setup is a dossier form of collapsible sections. In game, a stamped phase strip sits over two columns: the action desk on the left, the roll of players on the right, and one shared feed underneath. */
+:root{
+  --bg:#0e1420; --surface:#16202f; --surface2:#1e2b40; --line:#2b3b55;
+  --fg:#e8e4d6; --muted:#9aa7ba;
+  --town:#72b4f4; --sab:#ee7164; --gold:#f0cf5a; --good:#62c78e; --warn:#eaa94d;
+  --on-gold:#10151f; --shadow:rgba(0,0,0,.35);
+  --f-display:'Special Elite','Courier New',monospace;
+  --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#edf0f5; --surface:#fbfcfe; --surface2:#e2e8f1; --line:#c3cedd;
+    --fg:#192233; --muted:#55667c;
+    --town:#1d68ba; --sab:#bf372b; --gold:#8f6c00; --good:#1c7f4d; --warn:#9b5d0a;
+    --on-gold:#ffffff; --shadow:rgba(25,34,51,.12);
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#edf0f5; --surface:#fbfcfe; --surface2:#e2e8f1; --line:#c3cedd;
+  --fg:#192233; --muted:#55667c;
+  --town:#1d68ba; --sab:#bf372b; --gold:#8f6c00; --good:#1c7f4d; --warn:#9b5d0a;
+  --on-gold:#ffffff; --shadow:rgba(25,34,51,.12);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1120px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.9rem,6vw,2.9rem);line-height:1.1}
+h2{font-size:1.3rem}
+h3{font-size:1.05rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.lede{color:var(--muted);max-width:60ch;margin-top:8px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.btn{background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:9px 14px;cursor:pointer;font-weight:500}
+.btn:hover:not(:disabled){border-color:var(--muted)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--gold);color:var(--on-gold);border-color:var(--gold);font-weight:600}
+.btn.small{padding:5px 10px;font-size:.85rem}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.grid>*{min-width:0}
+
+/* setup */
+#setup{display:flex;flex-direction:column;gap:14px}
+.title-row{display:flex;gap:14px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+details{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+summary{cursor:pointer;padding:13px 16px;font-family:var(--f-display);font-size:1.1rem;list-style:none;display:flex;justify-content:space-between;gap:10px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:'+';color:var(--muted)}
+details[open]>summary::after{content:'–'}
+details .body{padding:2px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.field{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted)}
+.field input[type=number],.field input[type=text],.field select{background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%;color:var(--fg);font-size:.95rem}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:.9rem;color:var(--fg)}
+.chk input{margin-top:3px;accent-color:var(--gold)}
+.chk small{display:block;color:var(--muted);font-size:.78rem}
+.sub{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+#errs{color:var(--sab);font-weight:500;display:flex;flex-direction:column;gap:3px}
+#lineup{font-family:var(--f-mono);font-size:.85rem;color:var(--muted)}
+
+/* game */
+.hud{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.stamp{font-family:var(--f-display);text-transform:uppercase;letter-spacing:.14em;border:2px solid var(--gold);color:var(--gold);padding:4px 12px;border-radius:4px;transform:rotate(-1.5deg);font-size:1.05rem}
+.hud .meta{color:var(--muted);font-size:.9rem}
+.timer{margin-left:auto;font-family:var(--f-mono);font-size:1.35rem;font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--surface2);border-radius:4px;overflow:hidden;margin-bottom:14px}
+.bar>i{display:block;height:100%;width:100%;background:var(--gold)}
+.cols{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:820px){.cols{grid-template-columns:minmax(0,1fr)}}
+.stack{display:flex;flex-direction:column;gap:14px;min-width:0}
+.role{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+.role h2.sab{color:var(--sab)}
+.role h2.town{color:var(--town)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-family:var(--f-mono);font-size:.82rem;border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--bg)}
+.chip b{color:var(--gold);font-weight:500}
+.players{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px}
+.pc{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:3px;text-align:left;min-width:0}
+.pc .nm{font-weight:600;overflow-wrap:anywhere}
+.pc .tg{font-size:.72rem;display:flex;gap:4px;flex-wrap:wrap}
+.tag{border:1px solid var(--line);border-radius:4px;padding:0 5px;color:var(--muted)}
+.tag.sab{color:var(--sab);border-color:var(--sab)}
+.tag.town{color:var(--town);border-color:var(--town)}
+.tag.me{color:var(--gold);border-color:var(--gold)}
+.pc.dead{opacity:.5}
+.pc.dead .nm{text-decoration:line-through}
+.pc.pick{cursor:pointer}
+.pc.pick:hover{border-color:var(--muted)}
+.pc.chosen{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
+.panel{display:flex;flex-direction:column;gap:12px}
+.qtext{font-size:1.15rem;font-weight:500;text-wrap:balance}
+.qopts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (max-width:480px){.qopts{grid-template-columns:minmax(0,1fr)}}
+.qopts .btn{text-align:left;padding:12px}
+.qopts .ok{background:var(--good);border-color:var(--good);color:#08140d}
+.qopts .bad{background:var(--sab);border-color:var(--sab);color:#1a0a08}
+.note{border-left:3px solid var(--gold);padding:6px 12px;background:var(--bg);border-radius:0 6px 6px 0;font-size:.9rem;color:var(--muted)}
+.opt{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.opt label.chk{margin-right:6px}
+.range{display:flex;flex-direction:column;gap:4px}
+.range input{width:100%;accent-color:var(--gold)}
+.feed{max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding-right:4px}
+.fl{font-size:.9rem;padding-left:10px;border-left:3px solid var(--line);overflow-wrap:anywhere}
+.fl.div{border:0;padding:8px 0 0;font-family:var(--f-display);color:var(--gold);text-transform:uppercase;letter-spacing:.12em;font-size:.8rem}
+.fl.night{border-color:var(--sab)}
+.fl.vote{border-color:var(--gold)}
+.fl.private{border-color:var(--town);color:var(--town)}
+.fl.chat{border-color:var(--muted)}
+.fl.chat b{color:var(--fg)}
+.fl.win{border-color:var(--good);font-weight:600}
+.say{display:flex;gap:8px;flex-wrap:wrap}
+.say select,.say input[type=text]{background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px;color:var(--fg);min-width:0}
+.say input[type=text]{flex:1 1 160px}
+#over table{width:100%;border-collapse:collapse;font-size:.9rem}
+#over th,#over td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+#over th{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.tw{overflow-x:auto}
+.verdict{font-family:var(--f-display);font-size:clamp(1.6rem,5vw,2.4rem)}
+.verdict.town{color:var(--town)}.verdict.sab{color:var(--sab)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+
+<!-- ============ SETUP ============ -->
+<section id="setup">
+  <div class="title-row">
+    <div>
+      <h1>Academic Deception</h1>
+      <p class="lede">A social deduction game played over quiz questions. Saboteurs hide among the Scholars, and every correct answer earns points that power night actions.</p>
+    </div>
+    <div class="row">
+      <button class="btn small" id="presetBalanced" type="button">Balanced (tested)</button>
+      <button class="btn small" id="presetRuleset" type="button">Ruleset numbers</button>
+      <button class="btn small" id="presetFast" type="button">Fast timers</button>
+    </div>
+  </div>
+
+  <p class="muted" id="presetNote" style="font-size:.85rem"></p>
+
+  <details open>
+    <summary>Match</summary>
+    <div class="body">
+      <div class="grid">
+        <label class="field">Players (6 to 16)<input id="players" type="number" min="6" max="16" step="1"></label>
+        <label class="field">Saboteurs (1 Boss + Helpers)<input id="saboteurs" type="number" min="1" max="5" step="1"></label>
+        <label class="field">Round limit (0 = none)<input id="maxRounds" type="number" min="0" max="50" step="1"></label>
+        <label class="field">Scored answers per quest (0 = no cap)<input id="answerCap" type="number" min="0" max="30" step="1"></label>
+        <label class="field">Seed (blank = random)<input id="seed" type="text" maxlength="24" autocomplete="off"></label>
+      </div>
+      <div class="row">
+        <label class="chk"><input id="inv" type="checkbox">Investigator</label>
+        <label class="chk"><input id="men" type="checkbox">Mentor</label>
+        <label class="chk"><input id="openingQuest" type="checkbox">Opening quest before Night 1</label>
+      </div>
+      <div id="lineup"></div>
+    </div>
+  </details>
+
+  <details open>
+    <summary>Your seat and the bots</summary>
+    <div class="body">
+      <div class="grid">
+        <label class="field">Your role
+          <select id="humanRole">
+            <option value="random">Random</option>
+            <option value="boss">Saboteur Boss</option>
+            <option value="helper">Saboteur Helper</option>
+            <option value="investigator">Investigator</option>
+            <option value="mentor">Mentor</option>
+            <option value="scholar">Scholar</option>
+            <option value="spectator">Spectator (all bots)</option>
+          </select></label>
+        <label class="field">Bot skill
+          <select id="difficulty"><option value="easy">Easy</option><option value="normal">Normal</option><option value="hard">Hard</option></select></label>
+        <label class="field">Game speed
+          <select id="speed"><option value="1">1x</option><option value="2">2x</option><option value="4">4x</option></select></label>
+      </div>
+      <p class="muted" style="font-size:.85rem">Every other seat is a bot. Bots answer questions, spend points, accuse, share inspections, lie when they are Saboteurs, and vote. Spectator mode shows every role so you can watch them play.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Phase timers (seconds)</summary>
+    <div class="body">
+      <div class="grid">
+        <label class="field">Night (5 to 30)<input id="t_night" type="number" min="5" max="30" step="1"></label>
+        <label class="field">Quest (10 to 120)<input id="t_quest" type="number" min="10" max="120" step="1"></label>
+        <label class="field">Discussion (15 to 180)<input id="t_discuss" type="number" min="15" max="180" step="1"></label>
+        <label class="field">Vote (8 to 60)<input id="t_vote" type="number" min="8" max="60" step="1"></label>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Points and prices</summary>
+    <div class="body">
+      <div class="sub">Points per correct answer</div>
+      <div class="grid">
+        <label class="field">Saboteur Boss<input id="e_boss" type="number" min="0" max="10" step="0.1"></label>
+        <label class="field">Saboteur Helper<input id="e_helper" type="number" min="0" max="10" step="0.1"></label>
+        <label class="field">Scholar<input id="e_scholar" type="number" min="0" max="10" step="0.1"></label>
+        <label class="field">Investigator and Mentor<input id="e_special" type="number" min="0" max="10" step="0.1"></label>
+      </div>
+      <div class="sub">Night action prices</div>
+      <div class="grid">
+        <label class="field">Single Kill<input id="c_kill" type="number" min="0.1" max="20" step="0.1"></label>
+        <label class="field">Double Kill<input id="c_double" type="number" min="0.1" max="20" step="0.1"></label>
+        <label class="field">Hide Identity<input id="c_hide" type="number" min="0.1" max="20" step="0.1"></label>
+        <label class="field">Inspect Identity<input id="c_inspect" type="number" min="0.1" max="20" step="0.1"></label>
+        <label class="field">Heal / Shield<input id="c_heal" type="number" min="0.1" max="20" step="0.1"></label>
+      </div>
+      <div class="grid">
+        <label class="field">Minimum donation transfer<input id="threshold" type="number" min="0" max="5" step="0.1"></label>
+        <label class="field">Starting points<input id="startPts" type="number" min="0" max="10" step="0.1"></label>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Rules</summary>
+    <div class="body">
+      <div class="grid">
+        <label class="field">Reveal eliminated players
+          <select id="reveal"><option value="role">Full role</option><option value="team">Team only</option><option value="none">Nothing</option></select></label>
+        <label class="field">Vote ties
+          <select id="tie"><option value="none">Nobody is eliminated</option><option value="random">Pick one at random</option></select></label>
+      </div>
+      <label class="chk"><input id="announceSaves" type="checkbox"><span>Announce when a kill was blocked<small>The feed says someone was attacked and saved.</small></span></label>
+      <label class="chk"><input id="selfHeal" type="checkbox"><span>Mentor may shield themselves</span></label>
+      <label class="chk"><input id="promote" type="checkbox"><span>Promote a Helper when the Boss is eliminated<small>The team keeps its pool and a living Helper becomes Boss.</small></span></label>
+      <label class="chk"><input id="keyRoleWin" type="checkbox"><span>Saboteurs also win when every key role is eliminated<small>Key roles are the Investigator and Mentor you enabled.</small></span></label>
+    </div>
+  </details>
+
+  <div id="errs" role="alert" aria-live="polite"></div>
+  <div class="row"><button class="btn primary" id="start" type="button">Start game</button></div>
+</section>
+
+<!-- ============ GAME ============ -->
+<section id="game" hidden>
+  <div class="hud">
+    <span class="stamp" id="stamp">Quest</span>
+    <span class="meta" id="meta"></span>
+    <span class="timer" id="timer">0:00</span>
+  </div>
+  <div class="bar"><i id="bar"></i></div>
+  <div class="cols">
+    <div class="stack">
+      <div class="card role" id="role"></div>
+      <div class="card panel" id="panel"></div>
+      <div class="card"><h3 style="margin-bottom:8px">Feed</h3><div class="feed" id="feed" aria-live="polite"></div></div>
+    </div>
+    <div class="card"><h3 style="margin-bottom:10px">Players</h3><div class="players" id="plist"></div></div>
+  </div>
+</section>
+
+<!-- ============ OVER ============ -->
+<section id="over" hidden class="stack">
+  <div class="card">
+    <div class="verdict" id="verdict"></div>
+    <p class="muted" id="reason" style="margin-top:6px"></p>
+    <div class="row" style="margin-top:14px">
+      <button class="btn primary" id="again" type="button">Play again</button>
+      <button class="btn" id="toSetup" type="button">Change settings</button>
+    </div>
+  </div>
+  <div class="card"><h3 style="margin-bottom:8px">Final table</h3><div class="tw"><table id="finalTable"></table></div></div>
+  <div class="card"><h3 style="margin-bottom:8px">Feed</h3><div class="feed" id="feed2" style="max-height:420px"></div></div>
+</section>
+
+</div>
+
+<script>
+/*ENGINE_START*/
+const ROLE = {
+  boss:{label:'Saboteur Boss', short:'Boss', team:'saboteur'},
+  helper:{label:'Saboteur Helper', short:'Helper', team:'saboteur'},
+  investigator:{label:'Investigator', short:'Investigator', team:'town'},
+  mentor:{label:'Mentor', short:'Mentor', team:'town'},
+  scholar:{label:'Scholar', short:'Scholar', team:'town'}
+};
+const NAMES = ['Aziza','Timur','Dilnoza','Bekzod','Madina','Jasur','Zarina','Rustam','Nodira','Sardor','Malika','Otabek','Gulnora','Farrukh','Kamola','Sherzod','Laylo','Ulugbek'];
+// acc = answer accuracy, spd = seconds per question, noise = decision randomness,
+// believe = chance to trust an Investigator report, reveal = chance an Investigator shares, lie = chance a Saboteur frames someone
+const DIFF = {
+  easy:{acc:.55, spd:7.5, noise:.9, believe:.6,  reveal:.5,  lie:.05},
+  normal:{acc:.75, spd:5.5, noise:.5, believe:.8,  reveal:.75, lie:.15},
+  hard:{acc:.9, spd:4.5, noise:.15, believe:.9, reveal:.95, lie:.35}
+};
+const NOISE_MUL = 1.5;
+const RULESET = {
+  players:12, saboteurs:3, investigator:true, mentor:true,
+  humanRole:'random', difficulty:'normal', seed:'', speed:1,
+  openingQuest:true, answerCap:6, maxRounds:12,
+  t:{night:10, quest:30, discuss:45, vote:15},
+  earn:{boss:1, helper:.5, scholar:.2, special:.2},
+  cost:{kill:2, double:4.5, hide:1.5, inspect:1.5, heal:1.5},
+  threshold:.5, startPts:0,
+  reveal:'role', tie:'none', announceSaves:true, selfHeal:true, promote:true, keyRoleWin:true
+};
+// Balanced: same earning rates and the same Hide/Inspect/Shield prices as the ruleset. Kills cost more and each quest scores at most 3 answers.
+// Tested with 600 bot-only games per level at 12 players: Town wins 52% on Easy, 39% on Normal, 20% on Hard. With the raw ruleset prices (kill 2.0, double 4.5, 6 answers) it is 17%, 5% and 5%.
+const DEFAULTS = Object.assign(JSON.parse(JSON.stringify(RULESET)),{answerCap:3});
+DEFAULTS.cost = {kill:6, double:13, hide:1.5, inspect:1.5, heal:1.5};
+const QUESTIONS = [
+  {q:'What is the capital of Uzbekistan?', a:['Tashkent','Samarkand','Bukhara','Khiva'], c:0},
+  {q:'Which city is famous for the Registan square?', a:['Samarkand','Tashkent','Andijan','Nukus'], c:0},
+  {q:'Which Central Asian sea has nearly disappeared?', a:['Aral Sea','Caspian Sea','Black Sea','Dead Sea'], c:0},
+  {q:'What is the capital of Kazakhstan?', a:['Astana','Almaty','Bishkek','Dushanbe'], c:0},
+  {q:'Which mountains cover much of Tajikistan?', a:['Pamir','Alps','Andes','Urals'], c:0},
+  {q:'Which lake is the largest in Kyrgyzstan?', a:['Issyk-Kul','Baikal','Balkhash','Sarez'], c:0},
+  {q:'Which ruler made Samarkand his capital in the 14th century?', a:['Amir Timur','Genghis Khan','Babur','Ulugh Beg'], c:0},
+  {q:'The Silk Road linked China with…', a:['The Mediterranean','Australia','Brazil','Canada'], c:0},
+  {q:'7 × 8 = ?', a:['56','54','48','64'], c:0},
+  {q:'What is the square root of 144?', a:['12','14','11','16'], c:0},
+  {q:'Which planet is called the Red Planet?', a:['Mars','Venus','Jupiter','Mercury'], c:0},
+  {q:'What is the chemical formula of water?', a:['H₂O','CO₂','O₂','NaCl'], c:0}
+];
+
+const clone = o => JSON.parse(JSON.stringify(o));
+const r2 = x => Math.round(x*100)/100;
+const fmt = x => { const v = r2(x); return Math.abs(v*10-Math.round(v*10))<1e-9 ? v.toFixed(1) : v.toFixed(2); };
+function mulberry32(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shuffle(a,R){for(let i=a.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function lineup(S){
+  const sab=S.saboteurs, sp=(S.investigator?1:0)+(S.mentor?1:0), sc=S.players-sab-sp;
+  const parts=[`1 Boss`];
+  if(sab>1) parts.push(`${sab-1} Helper${sab>2?'s':''}`);
+  if(S.investigator) parts.push('1 Investigator');
+  if(S.mentor) parts.push('1 Mentor');
+  parts.push(`${sc} Scholar${sc===1?'':'s'}`);
+  return parts.join(', ');
+}
+
+function validate(S){
+  const e=[], num=v=>typeof v==='number'&&isFinite(v);
+  const int=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
+  if(!int(S.players,6,16)) e.push('Players must be a whole number from 6 to 16.');
+  if(!int(S.saboteurs,1,5)) e.push('Saboteurs must be a whole number from 1 to 5.');
+  else if(int(S.players,6,16)){
+    if(S.saboteurs*2>=S.players) e.push(`${S.saboteurs} Saboteurs is too many for ${S.players} players. Saboteurs must be fewer than half the room or they win at the start.`);
+    const sp=(S.investigator?1:0)+(S.mentor?1:0);
+    if(S.saboteurs+sp>S.players) e.push('There are more special roles than seats.');
+  }
+  if(S.humanRole==='investigator'&&!S.investigator) e.push('You picked the Investigator seat, but the Investigator is switched off.');
+  if(S.humanRole==='mentor'&&!S.mentor) e.push('You picked the Mentor seat, but the Mentor is switched off.');
+  if(S.humanRole==='helper'&&S.saboteurs<2) e.push('You picked the Helper seat, but there is only 1 Saboteur (the Boss). Raise Saboteurs to 2 or more.');
+  if(!int(S.maxRounds,0,50)) e.push('Round limit must be a whole number from 0 to 50.');
+  if(!int(S.answerCap,0,30)) e.push('Scored answers per quest must be a whole number from 0 to 30.');
+  const tr={night:[5,30],quest:[10,120],discuss:[15,180],vote:[8,60]};
+  for(const k in tr) if(!int(S.t[k],tr[k][0],tr[k][1])) e.push(`${k[0].toUpperCase()+k.slice(1)} timer must be a whole number from ${tr[k][0]} to ${tr[k][1]} seconds.`);
+  for(const k in S.earn) if(!num(S.earn[k])||S.earn[k]<0||S.earn[k]>10) e.push(`Points per correct answer for "${k}" must be between 0 and 10.`);
+  for(const k in S.cost) if(!num(S.cost[k])||S.cost[k]<=0||S.cost[k]>20) e.push(`The ${k} price must be above 0 and at most 20.`);
+  if(num(S.cost.kill)&&num(S.cost.double)&&S.cost.double<=S.cost.kill) e.push('Double Kill must cost more than Single Kill.');
+  if(!num(S.threshold)||S.threshold<0||S.threshold>5) e.push('Minimum donation transfer must be between 0 and 5.');
+  if(!num(S.startPts)||S.startPts<0||S.startPts>10) e.push('Starting points must be between 0 and 10.');
+  return e;
+}
+
+function log(G,text,kind,to){ G.feed.push({kind:kind||'sys',text,to:to==null?null:to,round:G.round}); }
+const alivePl = (G,f)=>G.players.filter(p=>p.alive&&(!f||f(p)));
+const sabAlive = G=>alivePl(G,p=>p.team==='saboteur');
+
+function createGame(S, seed){
+  const R=mulberry32(seed>>>0), n=S.players, roles=['boss'];
+  for(let i=0;i<S.saboteurs-1;i++) roles.push('helper');
+  if(S.investigator) roles.push('investigator');
+  if(S.mentor) roles.push('mentor');
+  while(roles.length<n) roles.push('scholar');
+  shuffle(roles,R);
+  const humanId = S.humanRole==='spectator' ? -1 : 0;
+  if(humanId===0 && S.humanRole!=='random'){ const j=roles.indexOf(S.humanRole); [roles[0],roles[j]]=[roles[j],roles[0]]; }
+  const names=shuffle(NAMES.slice(),R);
+  const players=roles.map((role,i)=>({
+    id:i, name:i===humanId?'You':names[i], role, team:ROLE[role].team, alive:true, shown:true, human:i===humanId,
+    pts:(role==='investigator'||role==='mentor')?S.startPts:0, pendPool:0, pendInv:0, pendMen:0, donate:1, invShare:.5,
+    susp:Array.from({length:n},()=>R()*.3), known:{}, inspections:[], said:0
+  }));
+  for(const b of players) if(b.team==='saboteur') for(const t of players) if(t.team==='saboteur') b.susp[t.id]=-10;
+  const G={S,rnd:R,players,humanId,pool:S.startPts,round:0,phase:'idle',feed:[],pending:null,winner:null,reason:'',
+    pub:{claims:{},reports:[],heat:{},accRound:{},accSab:{},acc:{}},stats:players.map(()=>({correct:0})),hist:[],sabTarget:null,lastVote:null};
+  return G;
+}
+
+/* ---------- quest ---------- */
+function botCorrect(G){
+  const d=DIFF[G.S.difficulty], R=G.rnd;
+  const spd=d.spd*(.75+R()*.5);
+  let n=Math.floor(G.S.t.quest*(.75+R()*.25)/spd);
+  if(G.S.answerCap) n=Math.min(n,G.S.answerCap);
+  let c=0; for(let i=0;i<n;i++) if(R()<d.acc) c++;
+  return c;
+}
+function creditPts(G,p,c){
+  const S=G.S; G.stats[p.id].correct+=c; if(!c) return 0;
+  if(p.role==='boss'){ const a=r2(c*S.earn.boss); G.pool=r2(G.pool+a); return a; }
+  if(p.role==='helper'){
+    const a=r2(c*S.earn.helper), give=r2(a*p.donate);
+    p.pts=r2(p.pts+a-give); p.pendPool=r2(p.pendPool+give);
+    if(p.pendPool>0&&p.pendPool>=S.threshold-1e-9){ G.pool=r2(G.pool+p.pendPool); p.pendPool=0; }
+    return a;
+  }
+  if(p.role==='scholar'){
+    const a=r2(c*S.earn.scholar);
+    const inv=G.players.find(x=>x.alive&&x.role==='investigator'), men=G.players.find(x=>x.alive&&x.role==='mentor');
+    if(!inv&&!men){ p.pts=r2(p.pts+a); return a; }
+    if(!men){ p.pendInv=r2(p.pendInv+p.pendMen); p.pendMen=0; }
+    if(!inv){ p.pendMen=r2(p.pendMen+p.pendInv); p.pendInv=0; }
+    const share=!men?1:!inv?0:p.invShare;
+    p.pendInv=r2(p.pendInv+a*share); p.pendMen=r2(p.pendMen+a*(1-share));
+    if(inv&&p.pendInv>0&&p.pendInv>=S.threshold-1e-9){ inv.pts=r2(inv.pts+p.pendInv); p.pendInv=0; }
+    if(men&&p.pendMen>0&&p.pendMen>=S.threshold-1e-9){ men.pts=r2(men.pts+p.pendMen); p.pendMen=0; }
+    return a;
+  }
+  const a=r2(c*S.earn.special); p.pts=r2(p.pts+a); return a;
+}
+function beginQuest(G,opening){ G.phase='quest'; G.feed.push({kind:'div',text:opening?'Opening quest':`Quest ${G.round}`}); }
+function finishQuest(G,humanCorrect){
+  const earned={};
+  for(const p of G.players){
+    if(!p.alive) continue;
+    const c=p.human?(humanCorrect||0):botCorrect(G);
+    earned[p.id]={c,a:creditPts(G,p,c)};
+  }
+  return earned;
+}
+
+/* ---------- bots: night ---------- */
+function wpick(G,items){ const tot=items.reduce((s,x)=>s+x.w,0); let r=G.rnd()*tot; for(const x of items){ if((r-=x.w)<=0) return x.id; } return items[items.length-1].id; }
+function threatScore(G,t){
+  const P=G.pub; let s=(P.accSab[t.id]||0)*2;
+  if(P.claims[t.id]==='investigator') s+=3;
+  if(P.claims[t.id]==='mentor') s+=2;
+  return s;
+}
+function botBossPlan(G,b){
+  const c=G.S.cost, d=DIFF[G.S.difficulty]; let budget=G.pool; const plan={kill:[],hide:null};
+  const town=alivePl(G,p=>p.team==='town');
+  const sc=town.map(t=>({id:t.id,s:threatScore(G,t)+G.rnd()*d.noise*NOISE_MUL})).sort((a,b)=>b.s-a.s);
+  const nSab=sabAlive(G).length;
+  if(budget>=c.double&&sc.length>=2&&(G.rnd()<.5||town.length-2<=nSab+1)){ plan.kill=[sc[0].id,sc[1].id]; budget=r2(budget-c.double); }
+  else if(budget>=c.kill&&sc.length>=1){ plan.kill=[sc[0].id]; budget=r2(budget-c.kill); }
+  if(budget>=c.hide){
+    let best=null,bh=0; for(const s of sabAlive(G)){ const h=G.pub.heat[s.id]||0; if(h>bh){bh=h;best=s.id;} }
+    if(best!=null||(G.rnd()<.2&&d.noise<.2)) plan.hide=best!=null?best:sabAlive(G)[0].id;
+  }
+  return plan;
+}
+function botInspect(G,b){
+  if(b.pts<G.S.cost.inspect) return null;
+  const cand=alivePl(G,p=>p.id!==b.id&&!(p.id in b.known)); if(!cand.length) return null;
+  const d=DIFF[G.S.difficulty]; let best=null,bs=-1e9;
+  for(const p of cand){ const s=b.susp[p.id]+G.rnd()*d.noise*NOISE_MUL; if(s>bs){bs=s;best=p.id;} }
+  return best;
+}
+function botHeal(G,b){
+  if(b.pts<G.S.cost.heal) return null;
+  const cand=alivePl(G,p=>(G.S.selfHeal||p.id!==b.id)&&b.known[p.id]!=='saboteur'); if(!cand.length) return null;
+  const items=cand.map(p=>{
+    let w=1;
+    if(p.id===b.id) w+=1.5;
+    const claim=G.pub.claims[p.id];
+    if(claim==='investigator'){ const believed=G.pub.reports.some(r=>r.by===p.id&&r.res==='saboteur'); w+= believed?6:2; w-=Math.max(0,b.susp[p.id])*.4; }
+    w=Math.max(.15,w-Math.max(0,b.susp[p.id])*.15);
+    return {id:p.id,w};
+  });
+  return wpick(G,items);
+}
+
+/* ---------- night resolution ---------- */
+function promoteIfNeeded(G){
+  if(!G.S.promote||G.players.some(p=>p.alive&&p.role==='boss')) return;
+  const hs=alivePl(G,p=>p.role==='helper'); if(!hs.length) return;
+  const h=hs[Math.floor(G.rnd()*hs.length)]; h.role='boss';
+  log(G,`${h.name} is promoted to Saboteur Boss and takes over the team pool (${fmt(G.pool)}).`,'private','saboteur');
+}
+function beginNight(G){ G.round++; G.phase='night'; G.feed.push({kind:'div',text:`Night ${G.round}`}); }
+function finishNight(G,acts){
+  const S=G.S,c=S.cost,P=G.players; acts=acts||{};
+  const boss=P.find(p=>p.alive&&p.role==='boss'), inv=P.find(p=>p.alive&&p.role==='investigator'), men=P.find(p=>p.alive&&p.role==='mentor');
+  const bp=boss?(boss.human?acts.boss:botBossPlan(G,boss)):null;
+  const ip=inv?(inv.human?acts.inv:botInspect(G,inv)):null;
+  const hp=men?(men.human?acts.men:botHeal(G,men)):null;
+  const hidden=new Set(); let kills=[];
+  if(bp){
+    kills=[...new Set((bp.kill||[]).filter(id=>id!=null&&P[id]&&P[id].alive&&P[id].team==='town'))].slice(0,2);
+    if(kills.length===2&&G.pool<c.double) kills=kills.slice(0,1);
+    if(kills.length===1&&G.pool<c.kill) kills=[];
+    const kc=kills.length===2?c.double:kills.length===1?c.kill:0; G.pool=r2(G.pool-kc);
+    let spent=kc, what=kills.length===2?'Double Kill':kills.length===1?'Single Kill':'no kill';
+    if(bp.hide!=null&&P[bp.hide]&&P[bp.hide].alive&&P[bp.hide].team==='saboteur'&&G.pool>=c.hide){ G.pool=r2(G.pool-c.hide); hidden.add(bp.hide); spent=r2(spent+c.hide); what+=` and Hide Identity on ${P[bp.hide].name}`; }
+    log(G,`Night ${G.round}: ${what}${kills.length?' ('+kills.map(k=>P[k].name).join(', ')+')':''}. Spent ${fmt(spent)}, pool now ${fmt(G.pool)}.`,'private','saboteur');
+  }
+  let healed=null;
+  if(men&&hp!=null&&P[hp]&&P[hp].alive&&(S.selfHeal||hp!==men.id)&&men.pts>=c.heal){ men.pts=r2(men.pts-c.heal); healed=hp; log(G,`You shielded ${P[hp].name} (cost ${fmt(c.heal)}).`,'private',men.id); }
+  if(inv&&ip!=null&&P[ip]&&P[ip].alive&&ip!==inv.id&&inv.pts>=c.inspect){
+    inv.pts=r2(inv.pts-c.inspect);
+    const res=(hidden.has(ip)||P[ip].team==='town')?'town':'saboteur';
+    inv.inspections.push({round:G.round,target:ip,res,shared:false}); inv.known[ip]=res;
+    log(G,`Inspection: ${P[ip].name} is ${res==='saboteur'?'a Saboteur':'on the Town side'}.`,'private',inv.id);
+  }
+  const saved=[],dead=[];
+  for(const t of kills){ if(t===healed) saved.push(t); else { P[t].alive=false; dead.push(t); } }
+  G.pending={dead,saved,round:G.round,published:false};
+  G.hist.push({round:G.round,kills:dead.length,saved:saved.length,double:kills.length===2});
+  promoteIfNeeded(G);
+  checkWin(G);
+  if(G.winner) publishNight(G);
+  return G.pending;
+}
+function onEliminated(G,id,how,voters){
+  const e=G.players[id], S=G.S;
+  for(const b of G.players){
+    if(b.human||b.id===id) continue;
+    if(S.reveal!=='none') b.known[id]=e.team==='saboteur'?'saboteur':'town';
+    if(how==='vote'&&voters&&S.reveal!=='none'){
+      for(const v of voters) if(v!==b.id&&v!==id) b.susp[v]+=e.team==='town'?.7:-.7;
+    }
+    if(b.team==='saboteur') for(const t of G.players) if(t.team==='saboteur') b.susp[t.id]=-10;
+  }
+}
+function revealText(G,p){
+  const S=G.S;
+  if(S.reveal==='role') return `They were a ${ROLE[p.role].label}.`;
+  if(S.reveal==='team') return p.team==='saboteur'?'They were on the Saboteur side.':'They were on the Town side.';
+  return '';
+}
+function publishNight(G){
+  const pn=G.pending; if(!pn||pn.published) return; pn.published=true;
+  for(const id of pn.dead){
+    const p=G.players[id]; p.shown=false; log(G,`${p.name} was eliminated in the night. ${revealText(G,p)}`.trim(),'night'); onEliminated(G,id,'night',null);
+    // Saboteurs tend to silence the players who accuse them, so a victim's recent targets look more suspicious.
+    const last=(G.pub.acc[id]||[]).filter(a=>a.round>=G.round-1);
+    for(const a of last) for(const b of G.players){
+      if(!b.alive||b.human||b.id===a.target||b.id===id||!G.players[a.target].alive) continue;
+      if(b.known[a.target]) continue;
+      b.susp[a.target]+=1.0;
+      if(b.team==='saboteur') for(const t of G.players) if(t.team==='saboteur') b.susp[t.id]=-10;
+    }
+  }
+  if(G.S.announceSaves) for(const id of pn.saved) log(G,`${G.players[id].name} was attacked in the night, but a shield saved them.`,'night');
+  if(!pn.dead.length&&!(G.S.announceSaves&&pn.saved.length)) log(G,'The night was quiet.','night');
+}
+function checkWin(G){
+  const S=G.S, sab=sabAlive(G).length, town=alivePl(G,p=>p.team==='town').length;
+  if(sab===0){ G.winner='town'; G.reason='Every Saboteur has been eliminated.'; }
+  else if(sab>=town){ G.winner='saboteur'; G.reason=`The Saboteurs equal or outnumber the Town (${sab} against ${town}).`; }
+  else if(S.keyRoleWin&&(S.investigator||S.mentor)&&!alivePl(G,p=>p.role==='investigator'||p.role==='mentor').length){ G.winner='saboteur'; G.reason='Every key role has been eliminated.'; }
+  return G.winner;
+}
+
+/* ---------- discussion ---------- */
+const PH={
+  accuse:[t=>`I don't trust ${t}. Too quiet this round.`,t=>`${t} feels off to me. Anyone else?`,t=>`My vote is leaning toward ${t}.`,t=>`Watch ${t}. The story doesn't add up.`,t=>`${t} keeps dodging the question.`],
+  defend:[t=>`I'd leave ${t} alone for now.`,t=>`${t} seems fine to me.`,t=>`Not ${t}. I'd look elsewhere.`]
+};
+function phrase(G,m){
+  const t=m.target!=null?G.players[m.target].name:'';
+  if(m.type==='accuse') return PH.accuse[Math.floor(G.rnd()*PH.accuse.length)](t);
+  if(m.type==='defend') return PH.defend[Math.floor(G.rnd()*PH.defend.length)](t);
+  if(m.type==='claim') return m.role==='scholar'?"I'm just a Scholar.":`I'm the ${ROLE[m.role].label}.`;
+  if(m.type==='report') return m.res==='saboteur'?`I inspected ${t}: Saboteur!`:`I inspected ${t}: clean, they're on our side.`;
+  return m.text||'';
+}
+function hear(G,m){
+  m.text=m.text||phrase(G,m); m.round=G.round; m.kind='chat'; G.feed.push(m);
+  if(m.type==='chat') return;
+  const P=G.pub, d=DIFF[G.S.difficulty], tg=m.target!=null?G.players[m.target]:null;
+  if(m.type==='accuse'||(m.type==='report'&&m.res==='saboteur')){
+    P.heat[m.target]=(P.heat[m.target]||0)+1; P.accRound[m.target]=(P.accRound[m.target]||0)+1;
+    (P.acc[m.by]=P.acc[m.by]||[]).push({target:m.target,round:G.round});
+    if(tg&&tg.team==='saboteur') P.accSab[m.by]=(P.accSab[m.by]||0)+(m.type==='report'?3:1);
+  }
+  if(m.type==='claim') P.claims[m.by]=m.role;
+  if(m.type==='report'){ P.claims[m.by]='investigator'; P.reports.push({by:m.by,target:m.target,res:m.res,round:G.round}); }
+  for(const b of G.players){
+    if(!b.alive||b.human||b.id===m.by) continue;
+    const trust=Math.max(.15,1-b.susp[m.by]/4);
+    if(m.type==='accuse'){
+      if(m.target===b.id) continue;
+      if(b.known[m.target]==='town') b.susp[m.by]+=.6;
+      else if(b.known[m.target]==='saboteur') b.susp[m.by]-=.5;
+      else b.susp[m.target]+=.35*trust;
+    } else if(m.type==='defend'){
+      if(m.target!==b.id&&!b.known[m.target]) b.susp[m.target]-=.25*trust;
+    } else if(m.type==='report'){
+      if(m.target===b.id) continue;
+      const k=b.known[m.target];
+      if(k){ if((k==='saboteur')!==(m.res==='saboteur')) b.susp[m.by]+=3; else b.susp[m.by]-=.4; continue; }
+      const claimants=Object.keys(P.claims).map(Number).filter(i=>P.claims[i]==='investigator'&&G.players[i].alive);
+      let believe;
+      if(claimants.length>1) believe=claimants.every(i=>i===m.by||b.susp[i]>=b.susp[m.by]);
+      else believe=G.rnd()<d.believe;
+      if(believe){ b.susp[m.target]+=m.res==='saboteur'?3.5:-2.5; }
+      else b.susp[m.by]+=1.5;
+    }
+    if(b.team==='saboteur') for(const t of G.players) if(t.team==='saboteur') b.susp[t.id]=-10;
+  }
+}
+function planDiscussion(G){
+  const sched=[];
+  for(const p of alivePl(G,x=>!x.human)){ const k=1+(G.rnd()<.6?1:0); for(let i=0;i<k;i++) sched.push({t:.06+G.rnd()*.84,id:p.id}); }
+  return sched.sort((a,b)=>a.t-b.t);
+}
+function topSusp(G,b,cand){
+  const d=DIFF[G.S.difficulty]; let best=null,bs=-1e9;
+  for(const p of cand){ let s=b.susp[p.id]+G.rnd()*d.noise*NOISE_MUL; if(b.known[p.id]==='saboteur') s+=20; if(b.known[p.id]==='town') s-=20; if(s>bs){bs=s;best=p.id;} }
+  return best;
+}
+function botSpeak(G,id){
+  const b=G.players[id]; if(!b.alive||b.human||b.said>=2) return null; b.said++;
+  const d=DIFF[G.S.difficulty], R=G.rnd; let m=null;
+  if(b.role==='investigator'){
+    const un=b.inspections.filter(x=>!x.shared&&G.players[x.target].alive);
+    const s=un.find(x=>x.res==='saboteur'), cl=un.find(x=>x.res==='town');
+    if(s&&R()<d.reveal){ s.shared=true; m={type:'report',target:s.target,res:'saboteur'}; }
+    else if(cl&&R()<d.reveal*.5){ cl.shared=true; m={type:'report',target:cl.target,res:'town'}; }
+  }
+  if(!m&&b.team==='saboteur'){
+    const town=alivePl(G,p=>p.team==='town');
+    if(town.length&&R()<d.lie){ m={type:'report',target:topSusp(G,b,town),res:'saboteur'}; }
+    else if((G.pub.heat[b.id]||0)>1&&R()<.5){ m={type:'claim',role:'scholar'}; }
+    else {
+      const allies=sabAlive(G).filter(p=>p.id!==b.id&&(G.pub.heat[p.id]||0)>=2);
+      if(allies.length&&R()<.3) m={type:'defend',target:allies[0].id};
+      else if(town.length) m={type:'accuse',target:topSusp(G,b,town)};
+    }
+  }
+  if(!m){
+    const cand=alivePl(G,p=>p.id!==b.id&&b.known[p.id]!=='town');
+    const clean=alivePl(G,p=>p.id!==b.id&&b.known[p.id]==='town');
+    if(clean.length&&R()<.2) m={type:'defend',target:clean[Math.floor(R()*clean.length)].id};
+    else if(cand.length) m={type:'accuse',target:topSusp(G,b,cand)};
+  }
+  if(!m) return null;
+  m.by=id; hear(G,m); return m;
+}
+
+/* ---------- voting ---------- */
+function beginDiscuss(G){
+  publishNight(G); G.phase='discuss';
+  for(const p of G.players){ p.said=0; p.shown=p.alive; }
+  G.pub.accRound={};
+  G.feed.push({kind:'div',text:`Discussion ${G.round}`});
+}
+function beginVote(G){ G.phase='vote'; G.sabTarget=null; G.feed.push({kind:'div',text:`Vote ${G.round}`}); }
+function sabVoteTarget(G){
+  const town=alivePl(G,p=>p.team==='town'); if(!town.length) return null;
+  const d=DIFF[G.S.difficulty]; let best=null,bs=-1e9;
+  for(const t of town){
+    let s=(G.pub.accRound[t.id]||0)+threatScore(G,t)*.7+G.rnd()*d.noise*NOISE_MUL;
+    if(G.pub.reports.some(r=>r.by===t.id&&r.res==='saboteur'&&G.players[r.target].team==='saboteur'&&r.round===G.round)) s+=6;
+    if(s>bs){bs=s;best=t.id;}
+  }
+  return best;
+}
+function botVote(G,b){
+  const cand=alivePl(G,p=>p.id!==b.id);
+  if(b.team==='saboteur'){
+    if(G.sabTarget==null||!G.players[G.sabTarget].alive) G.sabTarget=sabVoteTarget(G);
+    return G.sabTarget;
+  }
+  return topSusp(G,b,cand);
+}
+function finishVote(G,hv){
+  const S=G.S, votes={};
+  for(const p of alivePl(G)){
+    const v=p.human?hv:botVote(G,p);
+    if(v!=null&&v!==p.id&&G.players[v]&&G.players[v].alive) votes[p.id]=v;
+  }
+  const tally={}; for(const v of Object.values(votes)) tally[v]=(tally[v]||0)+1;
+  const voters=Object.keys(votes).length, abst=alivePl(G).length-voters;
+  const max=Math.max(0,...Object.values(tally));
+  const top=Object.keys(tally).map(Number).filter(k=>tally[k]===max);
+  const line=Object.entries(votes).map(([a,b])=>`${G.players[a].name} → ${G.players[b].name}`).join(', ');
+  log(G,`Votes: ${line||'none'}${abst?` (${abst} abstained)`:''}.`,'vote');
+  let elim=null;
+  if(top.length===1) elim=top[0];
+  else if(top.length>1&&S.tie==='random') elim=top[Math.floor(G.rnd()*top.length)];
+  if(elim==null){ log(G,top.length>1?'The vote is tied. Nobody is eliminated.':'Nobody received a vote. Nobody is eliminated.','vote'); }
+  else {
+    const p=G.players[elim]; p.alive=false; p.shown=false;
+    const sup=Object.keys(votes).map(Number).filter(v=>votes[v]===elim);
+    log(G,`${p.name} is voted out with ${tally[elim]} vote${tally[elim]===1?'':'s'}. ${revealText(G,p)}`.trim(),'vote');
+    onEliminated(G,elim,'vote',sup);
+    promoteIfNeeded(G);
+  }
+  G.hist.push({round:G.round,voteOut:elim!=null?G.players[elim].team:null});
+  for(const k in G.pub.heat) G.pub.heat[k]*=.5;
+  G.pub.accRound={};
+  checkWin(G);
+  if(!G.winner&&S.maxRounds&&G.round>=S.maxRounds){ G.winner='saboteur'; G.reason=`The Town ran out of time after ${S.maxRounds} rounds.`; }
+  if(G.winner) log(G,`${G.winner==='town'?'Town':'Saboteurs'} win. ${G.reason}`,'win');
+  return {elim,tally,votes};
+}
+function simulate(S,seed){
+  const G=createGame(S,seed);
+  if(S.openingQuest){ beginQuest(G,true); finishQuest(G,0); }
+  let guard=0;
+  while(!G.winner&&guard++<80){
+    beginNight(G); finishNight(G,null); if(G.winner) break;
+    beginQuest(G,false); finishQuest(G,0);
+    beginDiscuss(G); for(const s of planDiscussion(G)) botSpeak(G,s.id);
+    beginVote(G); finishVote(G,null);
+  }
+  return G;
+}
+/*ENGINE_END*/
+
+/* ================= UI ================= */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let S=null,G=null,ph=null,U={},bag=[],timerH=null;
+const FIELDS={players:'n',saboteurs:'n',maxRounds:'n',answerCap:'n',seed:'s',inv:'b',men:'b',openingQuest:'b',humanRole:'s',difficulty:'s',speed:'n',
+  t_night:'n',t_quest:'n',t_discuss:'n',t_vote:'n',e_boss:'n',e_helper:'n',e_scholar:'n',e_special:'n',c_kill:'n',c_double:'n',c_hide:'n',c_inspect:'n',c_heal:'n',
+  threshold:'n',startPts:'n',reveal:'s',tie:'s',announceSaves:'b',selfHeal:'b',promote:'b',keyRoleWin:'b'};
+function readS(){
+  const v={}; for(const k in FIELDS){ const el=$(k); v[k]=FIELDS[k]==='b'?el.checked:FIELDS[k]==='n'?(el.value.trim()===''?NaN:Number(el.value)):el.value; }
+  return {players:v.players,saboteurs:v.saboteurs,investigator:v.inv,mentor:v.men,humanRole:v.humanRole,difficulty:v.difficulty,seed:v.seed,speed:v.speed,
+    openingQuest:v.openingQuest,answerCap:v.answerCap,maxRounds:v.maxRounds,
+    t:{night:v.t_night,quest:v.t_quest,discuss:v.t_discuss,vote:v.t_vote},
+    earn:{boss:v.e_boss,helper:v.e_helper,scholar:v.e_scholar,special:v.e_special},
+    cost:{kill:v.c_kill,double:v.c_double,hide:v.c_hide,inspect:v.c_inspect,heal:v.c_heal},
+    threshold:v.threshold,startPts:v.startPts,reveal:v.reveal,tie:v.tie,announceSaves:v.announceSaves,selfHeal:v.selfHeal,promote:v.promote,keyRoleWin:v.keyRoleWin};
+}
+function writeS(s){
+  const m={players:s.players,saboteurs:s.saboteurs,maxRounds:s.maxRounds,answerCap:s.answerCap,seed:s.seed,inv:s.investigator,men:s.mentor,openingQuest:s.openingQuest,
+    humanRole:s.humanRole,difficulty:s.difficulty,speed:s.speed,t_night:s.t.night,t_quest:s.t.quest,t_discuss:s.t.discuss,t_vote:s.t.vote,
+    e_boss:s.earn.boss,e_helper:s.earn.helper,e_scholar:s.earn.scholar,e_special:s.earn.special,
+    c_kill:s.cost.kill,c_double:s.cost.double,c_hide:s.cost.hide,c_inspect:s.cost.inspect,c_heal:s.cost.heal,
+    threshold:s.threshold,startPts:s.startPts,reveal:s.reveal,tie:s.tie,announceSaves:s.announceSaves,selfHeal:s.selfHeal,promote:s.promote,keyRoleWin:s.keyRoleWin};
+  for(const k in m){ const el=$(k); if(FIELDS[k]==='b') el.checked=!!m[k]; else el.value=m[k]; }
+  updateLineup();
+}
+function updateLineup(){
+  const s=readS(); const ok=Number.isInteger(s.players)&&Number.isInteger(s.saboteurs)&&s.players>=6&&s.saboteurs>=1&&s.players-s.saboteurs-(s.investigator?1:0)-(s.mentor?1:0)>=0;
+  $('lineup').textContent=ok?'Lineup: '+lineup(s):'';
+}
+function showErrs(e){ $('errs').innerHTML=e.map(x=>`<div>${esc(x)}</div>`).join(''); }
+function saveS(s){ try{ localStorage.setItem('academicDeceptionSettings',JSON.stringify(s)); }catch(e){} }
+function loadS(){ try{ const j=localStorage.getItem('academicDeceptionSettings'); if(j){ const s=JSON.parse(j); if(s&&s.t&&s.earn&&s.cost) return s; } }catch(e){} return null; }
+function hashSeed(str){ let h=1779033703^str.length; for(let i=0;i<str.length;i++){ h=Math.imul(h^str.charCodeAt(i),3432918353); h=h<<13|h>>>19; } return (h>>>0)||1; }
+
+function applyPreset(name){
+  const cur=readS(), base=clone(name==='ruleset'?RULESET:DEFAULTS);
+  // keep the player's seat, bot skill and seed when switching economy presets
+  for(const k of ['players','saboteurs','investigator','mentor','humanRole','difficulty','speed','seed']) if(cur[k]!==undefined&&!(typeof cur[k]==='number'&&isNaN(cur[k]))) base[k]=cur[k];
+  writeS(base); showErrs([]); setNote(name==='ruleset'?'Ruleset numbers loaded: Single Kill 2.0, Double Kill 4.5, up to 6 scored answers. Against bots the Town wins about 5% of games with these prices.':'Balanced preset loaded.');
+}
+function setNote(t){ $('presetNote').textContent=t; }
+$('presetBalanced').onclick=()=>applyPreset('balanced');
+$('presetRuleset').onclick=()=>applyPreset('ruleset');
+$('presetFast').onclick=()=>{ const cur=readS(); const t={night:8,quest:15,discuss:20,vote:10}; for(const k in t) $('t_'+k).value=t[k]; showErrs([]); setNote('Short timers set: night 8s, quest 15s, discussion 20s, vote 10s.'); };
+$('players').addEventListener('change',()=>{ const n=Number($('players').value); if(Number.isInteger(n)&&n>=6&&n<=16) $('saboteurs').value=Math.max(1,Math.round(n/4)); updateLineup(); });
+$('setup').addEventListener('input',updateLineup);
+$('start').onclick=startGame;
+$('again').onclick=()=>{ const s=clone(S); s.seed=''; startWith(s); };
+$('toSetup').onclick=()=>{ stopTimer(); $('over').hidden=true; $('game').hidden=true; $('setup').hidden=false; scrollTo(0,0); };
+
+function startGame(){
+  const s=readS(), e=validate(s); showErrs(e); if(e.length){ $('errs').scrollIntoView({block:'center'}); return; }
+  saveS(s); startWith(s);
+}
+function startWith(s){
+  S=s; const seed=S.seed&&String(S.seed).trim()?hashSeed(String(S.seed).trim()):Math.floor(Math.random()*4294967295)+1;
+  G=createGame(S,seed); bag=[]; U={};
+  $('setup').hidden=true; $('over').hidden=true; $('game').hidden=false; scrollTo(0,0);
+  log(G,G.humanId<0?'Spectating: you can see every role.':`You are ${/^[AEIOU]/.test(ROLE[G.players[0].role].label)?'an':'a'} ${ROLE[G.players[0].role].label}.`,'private',G.humanId<0?null:0);
+  if(S.openingQuest) enterQuest(true); else enterNight();
+  startTimer();
+}
+const T=k=>S.t[k]*1000/S.speed;
+const me=()=>G.humanId>=0?G.players[G.humanId]:null;
+const isGod=()=>{const m=me();return !m||!m.alive||G.over;};
+function setPhase(name,dur,extra){ ph=Object.assign({name,start:performance.now(),dur},extra||{}); ph.end=ph.start+dur; }
+function enterQuest(opening){
+  beginQuest(G,opening); setPhase('quest',T('quest'),{opening}); U.qCorrect=0; U.qN=0; U.q=null; U.qLock=false;
+  nextQuestion(); render();
+}
+function enterNight(){
+  beginNight(G); setPhase('night',T('night')); U.acts={mode:'none',k1:'',k2:'',hide:'',inv:'',men:''}; render();
+}
+function enterDiscuss(){
+  beginDiscuss(G); setPhase('discuss',T('discuss')); U.sched=planDiscussion(G); U.si=0; render();
+}
+function enterVote(){
+  beginVote(G); setPhase('vote',T('vote')); U.vote=null; render();
+}
+function flushBots(){ let any=false; while(U.si<U.sched.length){ const s=U.sched[U.si++]; if(botSpeak(G,s.id)) any=true; } if(any) renderFeed(); }
+function endPhase(){
+  if(!ph||G.over) return; const name=ph.name, opening=ph.opening;
+  if(name==='quest'){
+    const m=me(); const ea=finishQuest(G,U.qCorrect);
+    if(m&&ea[m.id]) log(G,`Quest: ${ea[m.id].c} scored answer${ea[m.id].c===1?'':'s'} for ${fmt(ea[m.id].a)} points.`,'private',m.id);
+    if(opening) enterNight(); else enterDiscuss();
+  } else if(name==='night'){
+    finishNight(G,buildActs()); if(G.winner) return over(); enterQuest(false);
+  } else if(name==='discuss'){ flushBots(); enterVote(); }
+  else if(name==='vote'){
+    finishVote(G,U.vote); if(G.winner) return over(); enterNight();
+  }
+}
+function buildActs(){
+  const m=me(), a=U.acts||{}; if(!m||!m.alive) return {};
+  const num=x=>x===''||x==null?null:Number(x);
+  if(m.role==='boss'){
+    const kill=a.mode==='double'?[num(a.k1),num(a.k2)]:a.mode==='single'?[num(a.k1)]:[];
+    return {boss:{kill:kill.filter(x=>x!=null),hide:num(a.hide)}};
+  }
+  if(m.role==='investigator') return {inv:num(a.inv)};
+  if(m.role==='mentor') return {men:num(a.men)};
+  return {};
+}
+function over(){
+  G.over=true; stopTimer(); render(); $('game').hidden=true; $('over').hidden=false; scrollTo(0,0);
+  const w=G.winner, m=me(); const won=m?(m.team==='saboteur')===(w==='saboteur'):null;
+  $('verdict').className='verdict '+(w==='town'?'town':'sab');
+  $('verdict').textContent=(w==='town'?'The Town wins':'The Saboteurs win')+(won===null?'':won?'. You won.':'. You lost.');
+  $('reason').textContent=`${G.reason} Round ${G.round}.`;
+  const rows=G.players.map(p=>`<tr><td>${esc(p.name)}</td><td style="color:var(--${p.team==='saboteur'?'sab':'town'})">${ROLE[p.role].label}</td><td>${p.alive?'Survived':'Eliminated'}</td><td class="mono">${G.stats[p.id].correct}</td></tr>`).join('');
+  $('finalTable').innerHTML=`<tr><th>Player</th><th>Role</th><th>Result</th><th>Correct answers</th></tr>${rows}`;
+  renderFeed();
+}
+function startTimer(){ stopTimer(); timerH=setInterval(tick,100); }
+function stopTimer(){ if(timerH){ clearInterval(timerH); timerH=null; } }
+function tick(){
+  if(!ph||!G||G.over) return;
+  const now=performance.now(), left=Math.max(0,ph.end-now);
+  $('bar').style.width=(left/ph.dur*100)+'%';
+  const s=Math.ceil(left/1000); $('timer').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+  if(ph.name==='discuss'){
+    const el=now-ph.start; let any=false;
+    while(U.si<U.sched.length&&el>=U.sched[U.si].t*ph.dur){ const x=U.sched[U.si++]; if(botSpeak(G,x.id)) any=true; }
+    if(any) renderFeed();
+  }
+  if(ph.name==='quest'&&U.qEnd&&now>=U.qEnd){ U.qEnd=0; nextQuestion(); renderQuestion(); }
+  if(left<=0) endPhase();
+}
+
+/* ---------- rendering ---------- */
+const STAMP={quest:'Quest',night:'Night',discuss:'Discussion',vote:'Vote'};
+function render(){ renderHud(); renderRole(); renderPlayers(); renderPanel(); renderFeed(); tick(); }
+function renderHud(){
+  $('stamp').textContent=ph.opening?'Opening quest':STAMP[ph.name];
+  const alive=G.players.filter(p=>p.shown).length;
+  $('meta').textContent=`Round ${Math.max(1,G.round)} · ${alive} of ${G.players.length} players left`;
+}
+function renderRole(){
+  const m=me(), el=$('role');
+  if(!m){ el.innerHTML=`<div><h2>Spectating</h2><p class="muted">Every role is visible. Bots are playing all seats.</p></div><div class="chips"><span class="chip">Saboteur pool <b>${fmt(G.pool)}</b></span></div>`; return; }
+  const cls=m.team==='saboteur'?'sab':'town';
+  let chips=`<span class="chip">Points <b>${fmt(m.role==='boss'?G.pool:m.pts)}</b></span>`;
+  if(m.team==='saboteur'&&m.role!=='boss') chips+=`<span class="chip">Team pool <b>${fmt(G.pool)}</b></span>`;
+  if(!m.alive) chips=`<span class="chip">Eliminated</span>`;
+  const blurb={boss:'You decide the night actions. Your answers pay straight into the team pool.',helper:'Your answers feed the team pool. You cannot act at night.',investigator:'Spend points at night to learn one player\'s side.',mentor:'Spend points at night to shield one player from a kill.',scholar:'Your answers fund the Investigator and the Mentor.'}[m.role];
+  el.innerHTML=`<div><h2 class="${cls}">${ROLE[m.role].label}</h2><p class="muted" style="max-width:52ch">${blurb}</p></div><div class="chips">${chips}</div>`;
+}
+function renderPlayers(){
+  const m=me(), god=isGod(), voting=ph&&ph.name==='vote'&&m&&m.alive;
+  $('plist').innerHTML=G.players.map(p=>{
+    const dead=god?!p.alive:!p.shown;
+    const seeRole=god||(m&&(p.id===m.id||(m.team==='saboteur'&&p.team==='saboteur')));
+    const tags=[];
+    if(p.human) tags.push('<span class="tag me">You</span>');
+    if(seeRole&&!dead) tags.push(`<span class="tag ${p.team==='saboteur'?'sab':'town'}">${ROLE[p.role].short}</span>`);
+    if(dead){
+      if(S.reveal==='role'||god) tags.push(`<span class="tag ${p.team==='saboteur'?'sab':'town'}">${ROLE[p.role].short}</span>`);
+      else if(S.reveal==='team') tags.push(`<span class="tag ${p.team==='saboteur'?'sab':'town'}">${p.team==='saboteur'?'Saboteur':'Town'}</span>`);
+      tags.push('<span class="tag">Out</span>');
+    }
+    if(m&&m.role==='investigator'&&p.id in m.known&&!dead) tags.push(`<span class="tag ${m.known[p.id]==='saboteur'?'sab':'town'}">${m.known[p.id]==='saboteur'?'Inspected: Saboteur':'Inspected: clean'}</span>`);
+    const pick=voting&&!dead&&p.id!==m.id;
+    if(pick) tags.push(U.vote===p.id?'<span class="tag me">Your vote</span>':'<span class="tag">Vote</span>');
+    return `<${pick?'button type="button" data-act="vote" data-id="'+p.id+'"':'div'} class="pc ${dead?'dead':''} ${pick?'pick':''} ${U.vote===p.id&&ph.name==='vote'?'chosen':''}"><span class="nm">${esc(p.name)}</span><span class="tg">${tags.join('')}</span></${pick?'button':'div'}>`;
+  }).join('');
+}
+function renderFeed(){
+  const m=me(), god=isGod();
+  const vis=G.feed.filter(f=>f.to==null||god||f.to===G.humanId||(f.to==='saboteur'&&m&&m.team==='saboteur'));
+  const html=vis.map(f=>{
+    if(f.kind==='div') return `<div class="fl div">${esc(f.text)}</div>`;
+    if(f.kind==='chat'){ const who=G.players[f.by]; return `<div class="fl chat"><b>${esc(who.name)}</b> ${esc(f.text)}</div>`; }
+    return `<div class="fl ${f.kind}">${esc(f.text)}</div>`;
+  }).join('');
+  for(const id of ['feed','feed2']){ const el=$(id); if(el.dataset.h!==html){ el.innerHTML=html; el.dataset.h=html; el.scrollTop=el.scrollHeight; } }
+}
+function renderPanel(){
+  const m=me(), alive=m&&m.alive, el=$('panel');
+  const fn={quest:panelQuest,night:panelNight,discuss:panelDiscuss,vote:panelVote}[ph.name];
+  el.innerHTML=fn(m,alive);
+}
+const readyBtn=(label)=>`<div class="row"><button class="btn" type="button" data-act="ready">${label}</button></div>`;
+function nextQuestion(){
+  if(S.answerCap&&U.qN>=S.answerCap){ U.q=null; return; }
+  if(!bag.length) bag=shuffle(QUESTIONS.slice(),Math.random);
+  const q=bag.pop(); U.q={q:q.q,o:shuffle(q.a.map((t,i)=>({t,i})),Math.random),c:q.c,done:false};
+}
+function renderQuestion(){
+  const el=$('qbox'); if(!el) return;
+  const cap=S.answerCap?` of ${S.answerCap}`:'';
+  const head=`<div class="chips"><span class="chip">Answered <b>${U.qN}${cap}</b></span><span class="chip">Correct <b>${U.qCorrect}</b></span></div>`;
+  if(!U.q){ el.innerHTML=head+`<p class="note">You reached the answer limit for this quest. Wait for the timer or press Ready.</p>`; return; }
+  el.innerHTML=head+`<div class="qtext">${esc(U.q.q)}</div><div class="qopts">${U.q.o.map((x,k)=>`<button class="btn" type="button" data-act="ans" data-i="${x.i}">${k+1}. ${esc(x.t)}</button>`).join('')}</div>`;
+}
+function panelQuest(m,alive){
+  if(!m) return `<h3>Quest</h3><p class="muted">Bots are answering questions. Scored answers become points at the end of the phase.</p>${readyBtn('Skip phase')}`;
+  if(!alive) return `<h3>Quest</h3><p class="muted">You are eliminated. You can watch the rest of the game.</p>${readyBtn('Skip phase')}`;
+  let ctl='';
+  if(m.role==='scholar') ctl=`<div class="range"><div class="sub">Where your points go</div><input id="share" type="range" min="0" max="100" step="5" value="${Math.round(m.invShare*100)}" aria-label="Share to Investigator"><div class="mono" id="shareLbl"></div><p class="muted" style="font-size:.8rem">Transfers happen once your pending amount reaches ${fmt(S.threshold)}.</p></div>`;
+  if(m.role==='helper') ctl=`<div class="range"><div class="sub">Donate to the Saboteur pool</div><input id="share" type="range" min="0" max="100" step="5" value="${Math.round(m.donate*100)}" aria-label="Donation share"><div class="mono" id="shareLbl"></div><p class="muted" style="font-size:.8rem">Transfers happen once your pending amount reaches ${fmt(S.threshold)}.</p></div>`;
+  setTimeout(()=>{ updateShareLbl(); renderQuestion(); },0);
+  return `<h3>Quest</h3><div id="qbox" class="panel"></div>${ctl}${readyBtn('Ready')}`;
+}
+function updateShareLbl(){
+  const m=me(), s=$('share'), l=$('shareLbl'); if(!m||!s||!l) return;
+  const v=Number(s.value);
+  if(m.role==='scholar'){ m.invShare=v/100; l.textContent=`Investigator ${v}% · Mentor ${100-v}%`; }
+  else if(m.role==='helper'){ m.donate=v/100; l.textContent=`Pool ${v}% · keep ${100-v}%`; }
+}
+const aliveOpts=(f,sel)=>alivePl(G,f).map(p=>`<option value="${p.id}" ${String(sel)===String(p.id)?'selected':''}>${esc(p.name)}</option>`).join('');
+function panelNight(m,alive){
+  if(!m) return `<h3>Night</h3><p class="muted">The Saboteurs, Investigator and Mentor are choosing in secret.</p>${readyBtn('Skip phase')}`;
+  if(!alive) return `<h3>Night</h3><p class="muted">You are eliminated. You can watch the rest of the game.</p>${readyBtn('Skip phase')}`;
+  const a=U.acts, c=S.cost;
+  if(m.role==='boss'){
+    const none=`<option value="">Choose a player</option>`;
+    const nonSab=p=>p.team==='town';
+    const spend=(a.mode==='double'?c.double:a.mode==='single'?c.kill:0)+(a.hide!==''?c.hide:0);
+    return `<h3>Night: your orders</h3><p class="muted">Team pool <b class="mono">${fmt(G.pool)}</b>. This plan costs <b class="mono" id="spend">${fmt(spend)}</b>.</p>
+    <div class="opt">
+      <label class="chk"><input type="radio" name="mode" data-act="mode" value="none" ${a.mode==='none'?'checked':''}>No kill</label>
+      <label class="chk"><input type="radio" name="mode" data-act="mode" value="single" ${a.mode==='single'?'checked':''} ${G.pool<c.kill?'disabled':''}>Single Kill (${fmt(c.kill)})</label>
+      <label class="chk"><input type="radio" name="mode" data-act="mode" value="double" ${a.mode==='double'?'checked':''} ${G.pool<c.double?'disabled':''}>Double Kill (${fmt(c.double)})</label>
+    </div>
+    <div class="say"><select id="k1" data-act="sel" aria-label="First target">${none}${aliveOpts(nonSab,a.k1)}</select>
+    ${a.mode==='double'?`<select id="k2" data-act="sel" aria-label="Second target">${none}${aliveOpts(nonSab,a.k2)}</select>`:''}</div>
+    <div class="say"><select id="hide" data-act="sel" aria-label="Hide a Saboteur"><option value="">No Hide Identity</option>${aliveOpts(p=>p.team==='saboteur',a.hide)}</select><span class="muted" style="align-self:center">Hide Identity (${fmt(c.hide)}) makes one Saboteur look clean to an inspection tonight.</span></div>
+    ${readyBtn('Lock in')}`;
+  }
+  if(m.role==='investigator'){
+    const past=m.inspections.map(x=>`<li>Night ${x.round}: ${esc(G.players[x.target].name)} was ${x.res==='saboteur'?'a Saboteur':'clean'}</li>`).join('');
+    const can=m.pts>=c.inspect;
+    return `<h3>Night: inspect</h3><p class="muted">Inspect Identity costs <b class="mono">${fmt(c.inspect)}</b>. You have <b class="mono">${fmt(m.pts)}</b>.${can?'':' You cannot afford it tonight.'}</p>
+    <div class="say"><select id="nInv" data-act="sel" ${can?'':'disabled'} aria-label="Player to inspect"><option value="">Choose a player</option>${aliveOpts(p=>p.id!==m.id,a.inv)}</select></div>
+    ${past?`<div class="note"><b>Your notes</b><ul style="margin:4px 0 0 18px;padding:0">${past}</ul></div>`:''}${readyBtn('Lock in')}`;
+  }
+  if(m.role==='mentor'){
+    const can=m.pts>=c.heal;
+    return `<h3>Night: shield</h3><p class="muted">Heal / Shield costs <b class="mono">${fmt(c.heal)}</b>. You have <b class="mono">${fmt(m.pts)}</b>.${can?'':' You cannot afford it tonight.'}</p>
+    <div class="say"><select id="nMen" data-act="sel" ${can?'':'disabled'} aria-label="Player to shield"><option value="">Choose a player</option>${aliveOpts(p=>S.selfHeal||p.id!==m.id,a.men)}</select></div>${readyBtn('Lock in')}`;
+  }
+  const t=m.role==='helper'?'You have no night action. Your team boss is deciding.':'You sleep through the night. Other roles are choosing in secret.';
+  return `<h3>Night</h3><p class="muted">${t}</p>${readyBtn('Ready')}`;
+}
+function panelDiscuss(m,alive){
+  if(!m||!alive) return `<h3>Discussion</h3><p class="muted">Bots are debating. Watch the feed for accusations and claims.</p>${readyBtn('Skip phase')}`;
+  const others=G.players.filter(p=>p.shown&&p.id!==m.id).map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  return `<h3>Discussion</h3><p class="muted">Use the buttons so the bots understand you. You may lie.</p>
+  <div class="say">
+    <select id="sayType" data-act="sayType" aria-label="What to say"><option value="accuse">Accuse</option><option value="defend">Defend</option><option value="claim">Claim a role</option><option value="report">Report an inspection</option></select>
+    <select id="sayTarget" aria-label="Player">${others}</select>
+    <select id="sayRole" aria-label="Role" hidden><option value="investigator">Investigator</option><option value="mentor">Mentor</option><option value="scholar">Scholar</option></select>
+    <select id="sayRes" aria-label="Result" hidden><option value="saboteur">Saboteur</option><option value="town">Clean</option></select>
+    <button class="btn primary" type="button" data-act="say">Say it</button>
+  </div>
+  <div class="say"><input id="free" type="text" maxlength="140" placeholder="Or type a message (bots will not read it)" aria-label="Free message"><button class="btn" type="button" data-act="free">Send</button></div>
+  ${readyBtn('End discussion')}`;
+}
+function panelVote(m,alive){
+  if(!m||!alive) return `<h3>Vote</h3><p class="muted">Bots are voting.</p>${readyBtn('Skip phase')}`;
+  const cur=U.vote==null?'nobody (abstain)':G.players[U.vote].name;
+  return `<h3>Vote</h3><p class="muted">Pick a player on the right, or abstain. Majority picks the one who goes out${S.tie==='none'?'; ties eliminate nobody':'; ties are broken at random'}. Your vote now: <b>${esc(cur)}</b>.</p>
+  <div class="row"><button class="btn" type="button" data-act="abstain">Abstain</button><button class="btn primary" type="button" data-act="ready">Lock vote</button></div>`;
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]'); if(!b||!G||G.over) return; const act=b.dataset.act, m=me();
+  if(act==='ready') endPhase();
+  else if(act==='vote'){ U.vote=Number(b.dataset.id); renderPlayers(); $('panel').innerHTML=panelVote(m,m&&m.alive); }
+  else if(act==='abstain'){ U.vote=null; renderPlayers(); $('panel').innerHTML=panelVote(m,m&&m.alive); }
+  else if(act==='ans'&&U.q&&!U.q.done){
+    U.q.done=true; U.qN++; const ok=Number(b.dataset.i)===U.q.c; if(ok) U.qCorrect++;
+    for(const x of document.querySelectorAll('#qbox .qopts .btn')){ x.disabled=true; if(Number(x.dataset.i)===U.q.c) x.classList.add('ok'); else if(x===b) x.classList.add('bad'); }
+    U.qEnd=performance.now()+(ok?500:1000);
+  }
+  else if(act==='say') say();
+  else if(act==='free') free();
+});
+document.addEventListener('change',e=>{
+  const t=e.target; if(!G||G.over) return;
+  if(t.id==='sayType'){ const v=t.value; $('sayRole').hidden=v!=='claim'; $('sayTarget').hidden=v==='claim'; $('sayRes').hidden=v!=='report'; }
+  else if(t.dataset.act==='mode'){ U.acts.mode=t.value; if(t.value==='none'){U.acts.k1='';U.acts.k2='';} $('panel').innerHTML=panelNight(me(),true); }
+  else if(t.dataset.act==='sel'){ const k={nInv:'inv',nMen:'men'}[t.id]||t.id; U.acts[k]=t.value; const sp=$('spend'); if(sp){ const c=S.cost; sp.textContent=fmt((U.acts.mode==='double'?c.double:U.acts.mode==='single'?c.kill:0)+(U.acts.hide!==''?c.hide:0)); } }
+});
+document.addEventListener('input',e=>{ if(e.target.id==='share') updateShareLbl(); });
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT'||e.target.tagName==='TEXTAREA') { if(e.key==='Enter'&&e.target.id==='free') free(); return; }
+  if(!G||G.over||!ph||ph.name!=='quest') return;
+  const i='1234'.indexOf(e.key); if(i<0) return; const btn=document.querySelectorAll('#qbox .qopts .btn')[i]; if(btn&&!btn.disabled) btn.click();
+});
+function say(){
+  const m=me(); if(!m||!m.alive) return; const type=$('sayType').value, msg={by:m.id,type};
+  if(type==='claim') msg.role=$('sayRole').value; else msg.target=Number($('sayTarget').value);
+  if(type==='report') msg.res=$('sayRes').value;
+  if(msg.target===m.id) return; hear(G,msg); renderFeed();
+}
+function free(){
+  const m=me(), el=$('free'); if(!m||!m.alive||!el||!el.value.trim()) return;
+  hear(G,{by:m.id,type:'chat',text:el.value.trim()}); el.value=''; renderFeed();
+}
+
+/* ---------- init ---------- */
+writeS(loadS()||clone(DEFAULTS));
+setNote('Balanced preset: kills cost more than the ruleset so the Town has a fair chance. Press Ruleset numbers for the original prices.');
+</script>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tic-Tac-Toe Ultimate</title>
+<style>
+:root{--bg:#f4f5f9;--card:#fff;--text:#1d2030;--muted:#6b7084;--line:#d9dce8;--cell:#eef0f7;--red:#e03131;--blue:#1c7ed6;--green:#2f9e44;--yellow:#e8a900;--accent:#5c5ce6;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14151f;--card:#1e2030;--text:#eceefa;--muted:#9a9fb8;--line:#33364d;--cell:#2a2d44;--red:#ff6b6b;--blue:#4dabf7;--green:#51cf66;--yellow:#ffd43b;--accent:#8c8cff}}
+:root[data-theme="dark"]{--bg:#14151f;--card:#1e2030;--text:#eceefa;--muted:#9a9fb8;--line:#33364d;--cell:#2a2d44;--red:#ff6b6b;--blue:#4dabf7;--green:#51cf66;--yellow:#ffd43b;--accent:#8c8cff}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;justify-content:center;padding:20px 12px}
+.wrap{width:100%;max-width:640px}
+h1{text-align:center;margin:0 0 16px;font-size:1.7rem;letter-spacing:-.5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 4px 18px rgba(0,0,0,.06)}
+.row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.field{flex:1;min-width:130px;display:flex;flex-direction:column;gap:6px;font-size:.85rem;color:var(--muted)}
+input,select{font:inherit;color:var(--text);background:var(--cell);border:1px solid var(--line);border-radius:10px;padding:9px 10px;width:100%}
+.players{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.prow{display:flex;align-items:center;gap:12px;background:var(--cell);border-radius:12px;padding:8px 12px}
+.prow svg{width:30px;height:30px;flex:none}
+.prow .lbl{flex:1;font-weight:600}
+.prow select{width:auto;min-width:130px}
+.fixed{color:var(--muted);font-size:.9rem;padding-right:8px}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:11px 18px;font-weight:600}
+.primary{background:var(--accent);color:#fff;width:100%;font-size:1.05rem}
+.ghost{background:var(--cell);color:var(--text)}
+.err{color:var(--red);font-size:.85rem;min-height:1.2em;margin:0 0 8px}
+#status{display:flex;align-items:center;justify-content:center;gap:10px;font-size:1.15rem;font-weight:700;margin-bottom:6px;min-height:40px}
+#status svg{width:32px;height:32px}
+.info{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:12px}
+#board{display:grid;gap:4px;width:min(100%,600px);margin:0 auto 16px;background:var(--line);padding:4px;border-radius:12px;touch-action:manipulation}
+.cell{background:var(--cell);aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:12%;transition:background .15s}
+.cell:hover:not(.filled){background:var(--line)}
+.cell.filled{cursor:default}
+.cell svg{width:100%;height:100%;animation:pop .22s ease-out}
+.cell.win{background:color-mix(in srgb,var(--wc,var(--accent)) 28%,var(--cell));animation:pulse .7s ease-in-out 3}
+.ptsTitle{font-size:.85rem;color:var(--muted);margin-bottom:6px}
+.ptsrow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.pt{flex:1;min-width:80px;display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.pt.bad input{border-color:var(--red)}
+.score{display:grid;gap:4px;margin-bottom:12px;font-size:.9rem}
+.srow{display:grid;grid-template-columns:30px 1fr 52px 52px 56px;align-items:center;gap:6px;background:var(--cell);border-radius:10px;padding:5px 10px}
+.srow.head{background:none;color:var(--muted);font-size:.75rem;padding-top:0;padding-bottom:0}
+.srow svg{width:22px;height:22px}
+.srow.done{opacity:.9}
+.srow b{text-align:right}.srow span:nth-child(n+3){text-align:right}
+#event{min-height:1.3em}
+@keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes pulse{50%{transform:scale(.92)}}
+.btns{display:flex;gap:10px;justify-content:center}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Tic-Tac-Toe Ultimate</h1>
+
+  <div id="setup" class="card">
+    <div class="row">
+      <label class="field">Board size (N × N, N ≥ 3)<input id="n" type="number" min="3" max="20" value="5"></label>
+      <label class="field">Win streak (≥ 3, ≤ N)<input id="k" type="number" min="3" max="20" value="4"></label>
+      <label class="field">Players<select id="count"><option>2</option><option>3</option><option>4</option></select></label>
+    </div>
+    <div class="players" id="players"></div>
+    <div class="ptsTitle">Points by finishing place (first to reach the streak scores highest)</div>
+    <div class="ptsrow" id="pts"></div>
+    <p class="err" id="err"></p>
+    <button class="primary" id="start">Start game</button>
+  </div>
+
+  <div id="game" class="card hidden">
+    <div id="status"></div>
+    <div class="info" id="info"></div>
+    <div class="info" id="event"></div>
+    <div class="score" id="score"></div>
+    <div id="board"></div>
+    <div class="btns">
+      <button class="ghost" id="restart">New round</button>
+      <button class="ghost" id="newgame">New setup</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const P = [
+  {name:'Red Cross', c:'var(--red)'},
+  {name:'Blue Circle', c:'var(--blue)'},
+  {name:'Green Triangle', c:'var(--green)'},
+  {name:'Yellow Square', c:'var(--yellow)'}
+];
+const DIRS = [[0,1],[1,0],[1,1],[1,-1]];
+const $ = id => document.getElementById(id);
+
+function icon(i){
+  const s = `stroke="${P[i].c}" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"`;
+  const shapes = [
+    `<path d="M22 22L78 78M78 22L22 78" ${s}/>`,
+    `<circle cx="50" cy="50" r="29" ${s}/>`,
+    `<polygon points="50,17 85,79 15,79" ${s}/>`,
+    `<rect x="21" y="21" width="58" height="58" rx="6" ${s}/>`
+  ];
+  return `<svg viewBox="0 0 100 100">${shapes[i]}</svg>`;
+}
+
+// ---------- Setup UI ----------
+const types = [];  // types[i]: 'human' | 'easy' | 'smart'
+function buildPlayers(){
+  const cnt = +$('count').value;
+  $('players').innerHTML = '';
+  for(let i=0;i<cnt;i++){
+    const row = document.createElement('div');
+    row.className = 'prow';
+    row.innerHTML = icon(i) + `<span class="lbl">Player ${i+1} · ${P[i].name}</span>`;
+    if(i===0){
+      row.insertAdjacentHTML('beforeend','<span class="fixed">Human (always)</span>');
+    } else {
+      const sel = document.createElement('select');
+      sel.innerHTML = '<option value="human">Human</option><option value="easy">Bot · Easy</option><option value="smart">Bot · Smart</option>';
+      sel.value = types[i] || 'smart';
+      sel.onchange = () => types[i] = sel.value;
+      types[i] = sel.value;
+      row.appendChild(sel);
+    }
+    $('players').appendChild(row);
+  }
+}
+const ORD = ['1st','2nd','3rd','4th'], DEF = [8,5,2,0];
+const ptVals = DEF.slice();
+function buildPts(){
+  const cnt = +$('count').value;
+  $('pts').innerHTML = '';
+  for(let i=0;i<cnt;i++){
+    const d = document.createElement('label');
+    d.className = 'pt'; d.innerHTML = `${ORD[i]} place`;
+    const inp = document.createElement('input');
+    inp.type='number'; inp.min=0; inp.max=999; inp.step=1; inp.value=ptVals[i]; inp.id='pt'+i;
+    inp.oninput = () => { ptVals[i] = inp.value; validatePts(); };
+    d.appendChild(inp); $('pts').appendChild(d);
+  }
+  validatePts();
+}
+// Returns array of points, or null if invalid (strictly decreasing, whole numbers >= 0)
+function validatePts(){
+  const cnt = +$('count').value, out = [];
+  let msg = '';
+  document.querySelectorAll('.pt').forEach(e=>e.classList.remove('bad'));
+  for(let i=0;i<cnt;i++){
+    const raw = $('pt'+i).value.trim(), v = Number(raw);
+    if(raw==='' || !Number.isInteger(v) || v<0 || v>999){ msg = 'Points must be whole numbers from 0 to 999.'; $('pt'+i).parentNode.classList.add('bad'); break; }
+    if(i>0 && v>=out[i-1]){ msg = `Points must decrease by place: ${ORD[i-1]} (${out[i-1]}) must be greater than ${ORD[i]} (${v}).`; $('pt'+i).parentNode.classList.add('bad'); $('pt'+(i-1)).parentNode.classList.add('bad'); break; }
+    out.push(v);
+  }
+  $('err').textContent = msg;
+  return msg ? null : out;
+}
+$('count').onchange = () => { buildPlayers(); buildPts(); };
+buildPlayers(); buildPts();
+
+// ---------- Game state ----------
+let N, K, cnt, board, turn, over, busy, moves, timer, done, order, pts, totals, roundPts, rank, tie;
+
+$('start').onclick = () => {
+  const n = parseInt($('n').value), k = parseInt($('k').value);
+  if(!(n>=3 && n<=20)) return $('err').textContent = 'Board size must be between 3 and 20.';
+  if(!(k>=3)) return $('err').textContent = 'Win streak must be at least 3.';
+  if(k>n) return $('err').textContent = 'Win streak cannot be larger than the board size.';
+  const p = validatePts();
+  if(!p) return;
+  N=n; K=k; cnt=+$('count').value; pts=p;
+  totals = Array(cnt).fill(0);
+  $('setup').classList.add('hidden');
+  $('game').classList.remove('hidden');
+  newRound();
+};
+$('restart').onclick = newRound;
+$('newgame').onclick = () => {
+  clearTimeout(timer);
+  $('game').classList.add('hidden');
+  $('setup').classList.remove('hidden');
+  validatePts();
+};
+
+function newRound(){
+  clearTimeout(timer);
+  board = Array.from({length:N},()=>Array(N).fill(-1));
+  turn = 0; over = false; busy = false; moves = 0;
+  done = Array(cnt).fill(false); order = []; roundPts = Array(cnt).fill(null); rank = Array(cnt).fill(null); tie = Array(cnt).fill(false);
+  const el = $('board');
+  el.style.gridTemplateColumns = `repeat(${N},1fr)`;
+  el.innerHTML = '';
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+    const d = document.createElement('div');
+    d.className = 'cell'; d.id = `c${r}_${c}`;
+    d.onclick = () => humanClick(r,c);
+    el.appendChild(d);
+  }
+  $('info').textContent = `${N}×${N} board · make ${K} in a row · points: ${pts.join(' / ')}`;
+  $('event').textContent = 'Players who reach the goal are ranked in order; the rest keep playing.';
+  renderScore();
+  updateStatus();
+  maybeBot();
+}
+
+function updateStatus(msg){
+  $('status').innerHTML = msg || `${icon(turn)}<span>Player ${turn+1}${turn>0&&types[turn]!=='human'?' (Bot)':''}'s turn</span>`;
+}
+
+function renderScore(){
+  let h = '<div class="srow head"><span></span><span>Player</span><span>Place</span><span>+Pts</span><span>Total</span></div>';
+  for(let i=0;i<cnt;i++){
+    const lbl = rank[i]===null ? '–' : (tie[i]?'T-':'')+ORD[rank[i]];
+    h += `<div class="srow ${done[i]?'done':''}">${icon(i)}<span>Player ${i+1}</span><span>${lbl}</span><span>${roundPts[i]===null?'–':'+'+roundPts[i]}</span><b>${totals[i]}</b></div>`;
+  }
+  $('score').innerHTML = h;
+}
+
+function humanClick(r,c){
+  if(over || busy || (turn>0 && types[turn]!=='human')) return;
+  place(r,c);
+}
+
+function nextTurn(){
+  let t = turn;
+  do { t = (t+1) % cnt; } while(done[t]);
+  turn = t;
+}
+
+function finish(p, cells){
+  done[p] = true; order.push(p);
+  const place = order.length-1; rank[p] = place;
+  roundPts[p] = pts[place]; totals[p] += pts[place];
+  cells.forEach(([a,b]) => { const e = $(`c${a}_${b}`); e.style.setProperty('--wc', P[p].c); e.classList.add('win'); });
+  $('event').textContent = `Player ${p+1} reached ${K} in a row and finishes ${ORD[place]} (+${pts[place]})!`;
+}
+
+function place(r,c){
+  if(board[r][c]!==-1 || over) return;
+  board[r][c] = turn; moves++;
+  const cell = $(`c${r}_${c}`);
+  cell.classList.add('filled');
+  cell.innerHTML = icon(turn);
+  const line = winLine(r,c,turn);
+  if(line) finish(turn,line);
+  const remaining = cnt - order.length;
+  if(remaining <= 1){ endRound('last'); return; }
+  if(moves === N*N){ endRound('full'); return; }
+  if(!canAnyoneFinish()){ endRound('dead'); return; }
+  nextTurn();
+  renderScore();
+  updateStatus();
+  maybeBot();
+}
+
+// Can any unfinished player still complete K in a row? (a window with no opponent marks)
+function canAnyoneFinish(){
+  for(let p=0;p<cnt;p++){
+    if(done[p]) continue;
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++) for(const [dr,dc] of DIRS){
+      const er=r+dr*(K-1), ec=c+dc*(K-1);
+      if(er<0||er>=N||ec<0||ec>=N) continue;
+      let ok = true;
+      for(let i=0;i<K;i++){ const v=board[r+dr*i][c+dc*i]; if(v!==-1 && v!==p){ ok=false; break; } }
+      if(ok) return true;
+    }
+  }
+  return false;
+}
+
+function endRound(reason){
+  over = true;
+  const hadFinisher = order.length > 0;
+  const left = [];
+  for(let i=0;i<cnt;i++) if(!done[i]) left.push(i);
+  // Everyone still unfinished is in the same position: nobody can reach the goal,
+  // so they share the points of the remaining places equally (a single player just takes the last place).
+  const size = left.length, start = order.length;
+  let sum = 0; for(let k=0;k<size;k++) sum += pts[start+k];
+  const share = Math.floor(sum/size);
+  left.forEach(p => {
+    order.push(p); rank[p]=start; tie[p]=size>1;
+    roundPts[p]=share; totals[p]+=share; done[p]=true;
+  });
+  renderScore();
+  if(hadFinisher) updateStatus(`<span>Round over · Player ${order[0]+1} finished 1st 🏆</span>`);
+  else updateStatus('<span>Draw · nobody could finish, points shared equally 🤝</span>');
+  const why = {last:`Player ${left[0]+1} takes the last place automatically.`,
+    full:'The board is full.', dead:`No one can reach ${K} in a row anymore.`}[reason];
+  $('event').textContent = reason==='last' ? why
+    : `${why} Players who didn't finish share the remaining places' points equally (rounded down).`;
+}
+
+function winLine(r,c,p){
+  for(const [dr,dc] of DIRS){
+    const cells = [[r,c]];
+    for(const s of [1,-1]){
+      let a=r+dr*s, b=c+dc*s;
+      while(a>=0&&b>=0&&a<N&&b<N&&board[a][b]===p){ cells.push([a,b]); a+=dr*s; b+=dc*s; }
+    }
+    if(cells.length>=K) return cells;
+  }
+  return null;
+}
+
+// ---------- Bots ----------
+function maybeBot(){
+  if(over || turn===0 || types[turn]==='human') return;
+  busy = true;
+  timer = setTimeout(() => {
+    const [r,c] = types[turn]==='easy' ? easyMove() : smartMove();
+    busy = false;
+    place(r,c);
+  }, 450);
+}
+
+function emptyCells(){
+  const out = [];
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++) if(board[r][c]===-1) out.push([r,c]);
+  return out;
+}
+
+function easyMove(){
+  const e = emptyCells();
+  // Easy bots still grab an instant win when they see one
+  for(const [r,c] of e){ board[r][c]=turn; const w = winLine(r,c,turn); board[r][c]=-1; if(w) return [r,c]; }
+  return e[Math.floor(Math.random()*e.length)];
+}
+
+// Score a cell for player p: longest run (with open ends) across the 4 directions
+function runScore(r,c,p){
+  board[r][c] = p;
+  let total = 0;
+  for(const [dr,dc] of DIRS){
+    let len = 1, open = 0;
+    for(const s of [1,-1]){
+      let a=r+dr*s, b=c+dc*s;
+      while(a>=0&&b>=0&&a<N&&b<N&&board[a][b]===p){ len++; a+=dr*s; b+=dc*s; }
+      if(a>=0&&b>=0&&a<N&&b<N&&board[a][b]===-1) open++;
+    }
+    if(len>=K) { board[r][c] = -1; return 1e7; }
+    if(open===0 && len<K) continue;           // dead line
+    total += Math.pow(9, len) * (open===2 ? 2 : 1);
+  }
+  board[r][c] = -1;
+  return total;
+}
+
+function smartMove(){
+  const e = emptyCells(), mid = (N-1)/2;
+  let best = -1, pick = [];
+  for(const [r,c] of e){
+    let s = runScore(r,c,turn);                       // win / build
+    let threat = 0;
+    for(let q=0;q<cnt;q++) if(q!==turn && !done[q]) threat = Math.max(threat, runScore(r,c,q));
+    s += threat >= 1e7 ? 5e6 : threat*0.85;           // block
+    s += 3 - (Math.abs(r-mid)+Math.abs(c-mid))/N;     // prefer centre
+    s += Math.random()*0.5;
+    if(s > best + 1e-9){ best = s; pick = [[r,c]]; }
+    else if(Math.abs(s-best) < 1e-9) pick.push([r,c]);
+  }
+  return pick[Math.floor(Math.random()*pick.length)];
+}
+</script>
+</body>
+</html>

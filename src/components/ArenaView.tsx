@@ -73,6 +73,11 @@ export function ArenaView({
   const [decksSubTab, setDecksSubTab] = useState<'discover' | 'mine'>('discover')
   const [isLoadingDecks, setIsLoadingDecks] = useState(false)
 
+  // Search & Filtering State (Host Game & Deck Library)
+  const [hostSourceTab, setHostSourceTab] = useState<'mine' | 'community'>('mine')
+  const [hostSearchQuery, setHostSearchQuery] = useState('')
+  const [librarySearchQuery, setLibrarySearchQuery] = useState('')
+
   // Quiz Creator State
   const [createTitle, setCreateTitle] = useState('')
   const [createDesc, setCreateDesc] = useState('')
@@ -803,88 +808,206 @@ export function ArenaView({
               </button>
             </div>
           ) : (
-            <div className="arena-deck-grid">
-              {[...myQuizzes, ...discoverQuizzes.filter((d) => !myQuizzes.some((m) => m.id === d.id))].map((quiz) => (
-                <div key={quiz.id} className="arena-deck-card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <span className="badge b-live">{quiz.visibility}</span>
-                    <span style={{ fontFamily: 'var(--f-mono)', fontSize: '0.8125rem', color: 'var(--muted)' }}>
-                      {quiz.owner === user.username ? 'My Deck' : `by ${quiz.owner}`}
-                    </span>
-                  </div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{quiz.title}</h3>
-                  <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.875rem' }}>
-                    {quiz.description || 'Comprehensive review questions for study groups.'}
-                  </p>
-                  <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.75rem', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '0.8125rem', color: 'var(--muted)', fontFamily: 'var(--f-mono)' }}>
-                      {quiz.question_count || 0} Questions
-                    </span>
-                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                      {user && quiz.owner === user.username && (
-                        <>
-                          <button
-                            type="button"
-                            className="btn ghost"
-                            style={{ fontSize: '0.8125rem', padding: '0.35rem 0.65rem' }}
-                            onClick={() => handleLoadQuizForEdit(quiz.id)}
-                            title="Edit full deck and questions in creator"
-                          >
-                            ✏️ Edit
-                          </button>
-                          <button
-                            type="button"
-                            className="btn line"
-                            style={{ fontSize: '0.8125rem', padding: '0.35rem 0.65rem' }}
-                            onClick={() => {
-                              setQuickUpdateQuiz(quiz)
-                              setQuickUpdateTitle(quiz.title)
-                              setQuickUpdateDesc(quiz.description || '')
-                              setQuickUpdateVisibility(quiz.visibility)
-                              setQuickUpdateMsg(null)
-                            }}
-                            title="Update deck settings"
-                          >
-                            🔄 Update
-                          </button>
-                          <button
-                            type="button"
-                            className="btn ghost danger"
-                            style={{ fontSize: '0.8125rem', padding: '0.35rem 0.65rem' }}
-                            onClick={() => handleDeleteQuiz(quiz.id)}
-                            title="Delete this deck"
-                          >
-                            🗑️ Delete
-                          </button>
-                        </>
-                      )}
-                      <button
-                        type="button"
-                        className="btn primary"
-                        style={{ fontSize: '0.8125rem', padding: '0.35rem 0.85rem' }}
-                        onClick={() => handleHostLaunch(quiz.id)}
-                      >
-                        ⚡ Host
-                      </button>
-                    </div>
-                  </div>
+            <>
+              {/* Header Toolbar: Source Selector + Search Bar + Refresh */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                {/* Source Segmented Control: My Decks vs Community Decks */}
+                <div className="seg" style={{ width: 'fit-content' }}>
+                  <button
+                    type="button"
+                    aria-selected={hostSourceTab === 'mine'}
+                    onClick={() => setHostSourceTab('mine')}
+                  >
+                    My Decks ({myQuizzes.length})
+                  </button>
+                  <button
+                    type="button"
+                    aria-selected={hostSourceTab === 'community'}
+                    onClick={() => setHostSourceTab('community')}
+                  >
+                    Community Decks ({discoverQuizzes.length})
+                  </button>
                 </div>
-              ))}
-              {myQuizzes.length === 0 && discoverQuizzes.length === 0 && (
-                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', background: 'var(--surface)', borderRadius: 'var(--radius-lg)' }}>
-                  <p style={{ color: 'var(--muted)', margin: '0 0 1rem' }}>
-                    No quiz decks available yet. Create your first deck in the Deck Creator to host a live match!
-                  </p>
+
+                {/* Search Bar in Host Match */}
+                <div style={{ position: 'relative', flex: 1, minWidth: '15rem', maxWidth: '26rem' }}>
+                  <span style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, pointerEvents: 'none', fontSize: '0.875rem' }}>
+                    🔍
+                  </span>
+                  <input
+                    type="text"
+                    className="inp"
+                    style={{ paddingLeft: '2.3rem', paddingRight: hostSearchQuery ? '2rem' : '0.85rem', width: '100%', borderRadius: 'var(--radius-full, 9999px)', fontSize: '0.875rem' }}
+                    placeholder={hostSourceTab === 'mine' ? 'Search your decks...' : 'Search community decks to host...'}
+                    value={hostSearchQuery}
+                    onChange={(e) => setHostSearchQuery(e.target.value)}
+                  />
+                  {hostSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setHostSearchQuery('')}
+                      style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', opacity: 0.6, fontSize: '0.8rem' }}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    className="btn line"
+                    onClick={fetchDecks}
+                    disabled={isLoadingDecks}
+                    title="Refresh decks list"
+                  >
+                    ↻ Refresh
+                  </button>
                   <button
                     type="button"
                     className="btn primary"
                     onClick={() => handleSelectTab('create')}
                   >
-                    + Create New Deck
+                    + Create Deck
                   </button>
                 </div>
-              )}
-            </div>
+              </div>
+
+              {/* Host Decks Grid */}
+              <div className="arena-deck-grid">
+                {(hostSourceTab === 'mine' ? myQuizzes : discoverQuizzes)
+                  .filter((quiz) => {
+                    if (!hostSearchQuery.trim()) return true
+                    const q = hostSearchQuery.toLowerCase().trim()
+                    return (
+                      (quiz.title || '').toLowerCase().includes(q) ||
+                      (quiz.description || '').toLowerCase().includes(q) ||
+                      (quiz.owner || '').toLowerCase().includes(q)
+                    )
+                  })
+                  .map((quiz) => (
+                    <div key={quiz.id} className="arena-deck-card">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <span className={`badge ${quiz.visibility === 'public' ? 'b-prog' : 'b-live'}`}>
+                          {quiz.visibility}
+                        </span>
+                        <span style={{ fontFamily: 'var(--f-mono)', fontSize: '0.8125rem', color: 'var(--muted)' }}>
+                          {quiz.owner === user.username ? 'My Deck' : `by ${quiz.owner}`}
+                        </span>
+                      </div>
+                      <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{quiz.title}</h3>
+                      <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.875rem' }}>
+                        {quiz.description || 'Comprehensive review questions for study groups.'}
+                      </p>
+                      <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.75rem', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.8125rem', color: 'var(--muted)', fontFamily: 'var(--f-mono)' }}>
+                          {quiz.question_count || 0} Questions
+                        </span>
+                        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                          {user && quiz.owner === user.username && (
+                            <>
+                              <button
+                                type="button"
+                                className="btn ghost"
+                                style={{ fontSize: '0.8125rem', padding: '0.35rem 0.65rem' }}
+                                onClick={() => handleLoadQuizForEdit(quiz.id)}
+                                title="Edit full deck and questions in creator"
+                              >
+                                ✏️ Edit
+                              </button>
+                              <button
+                                type="button"
+                                className="btn line"
+                                style={{ fontSize: '0.8125rem', padding: '0.35rem 0.65rem' }}
+                                onClick={() => {
+                                  setQuickUpdateQuiz(quiz)
+                                  setQuickUpdateTitle(quiz.title)
+                                  setQuickUpdateDesc(quiz.description || '')
+                                  setQuickUpdateVisibility(quiz.visibility)
+                                  setQuickUpdateMsg(null)
+                                }}
+                                title="Update deck settings"
+                              >
+                                🔄 Update
+                              </button>
+                              <button
+                                type="button"
+                                className="btn ghost danger"
+                                style={{ fontSize: '0.8125rem', padding: '0.35rem 0.65rem' }}
+                                onClick={() => handleDeleteQuiz(quiz.id)}
+                                title="Delete this deck"
+                              >
+                                🗑️ Delete
+                              </button>
+                            </>
+                          )}
+                          <button
+                            type="button"
+                            className="btn primary"
+                            style={{ fontSize: '0.8125rem', padding: '0.35rem 0.85rem' }}
+                            onClick={() => handleHostLaunch(quiz.id)}
+                          >
+                            ⚡ Host
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                {(hostSourceTab === 'mine' ? myQuizzes : discoverQuizzes).filter((quiz) => {
+                  if (!hostSearchQuery.trim()) return true
+                  const q = hostSearchQuery.toLowerCase().trim()
+                  return (
+                    (quiz.title || '').toLowerCase().includes(q) ||
+                    (quiz.description || '').toLowerCase().includes(q) ||
+                    (quiz.owner || '').toLowerCase().includes(q)
+                  )
+                }).length === 0 && (
+                  <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', background: 'var(--surface)', borderRadius: 'var(--radius-lg)' }}>
+                    {hostSearchQuery ? (
+                      <div>
+                        <p style={{ color: 'var(--muted)', margin: '0 0 1rem' }}>
+                          No decks found matching "<strong>{hostSearchQuery}</strong>" in {hostSourceTab === 'mine' ? 'your decks' : 'community decks'}.
+                        </p>
+                        <button
+                          type="button"
+                          className="btn line"
+                          onClick={() => setHostSearchQuery('')}
+                        >
+                          Clear Search
+                        </button>
+                      </div>
+                    ) : hostSourceTab === 'mine' ? (
+                      <div>
+                        <p style={{ color: 'var(--muted)', margin: '0 0 1rem' }}>
+                          You have not created any quiz decks yet. Build your first deck or browse community decks to host!
+                        </p>
+                        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                          <button
+                            type="button"
+                            className="btn primary"
+                            onClick={() => handleSelectTab('create')}
+                          >
+                            + Create New Deck
+                          </button>
+                          <button
+                            type="button"
+                            className="btn line"
+                            onClick={() => setHostSourceTab('community')}
+                          >
+                            Browse Community Decks
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p style={{ color: 'var(--muted)', margin: 0 }}>
+                        No community decks available right now.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
       )}
@@ -894,14 +1017,14 @@ export function ArenaView({
        * ===================================================================== */}
       {activeTab === 'decks' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
             <div className="seg" style={{ width: 'fit-content' }}>
               <button
                 type="button"
                 aria-selected={decksSubTab === 'discover'}
                 onClick={() => setDecksSubTab('discover')}
               >
-                Community Decks
+                Community Decks ({discoverQuizzes.length})
               </button>
               <button
                 type="button"
@@ -917,10 +1040,34 @@ export function ArenaView({
                 My Decks ({myQuizzes.length})
               </button>
             </div>
+
+            {/* Search Bar in Library */}
+            <div style={{ position: 'relative', flex: 1, minWidth: '15rem', maxWidth: '26rem' }}>
+              <span style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, pointerEvents: 'none', fontSize: '0.875rem' }}>
+                🔍
+              </span>
+              <input
+                type="text"
+                className="inp"
+                style={{ paddingLeft: '2.3rem', paddingRight: librarySearchQuery ? '2rem' : '0.85rem', width: '100%', borderRadius: 'var(--radius-full, 9999px)', fontSize: '0.875rem' }}
+                placeholder={decksSubTab === 'discover' ? 'Search community decks by title, topic, author...' : 'Search your decks...'}
+                value={librarySearchQuery}
+                onChange={(e) => setLibrarySearchQuery(e.target.value)}
+              />
+              {librarySearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setLibrarySearchQuery('')}
+                  style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', opacity: 0.6, fontSize: '0.8rem' }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
             <button
               type="button"
               className="btn line"
-              style={{ marginLeft: 'auto' }}
               onClick={fetchDecks}
               disabled={isLoadingDecks}
             >
@@ -934,72 +1081,107 @@ export function ArenaView({
             </div>
           ) : (
             <div className="arena-deck-grid">
-              {(decksSubTab === 'discover' ? discoverQuizzes : myQuizzes).map((quiz) => (
-                <div key={quiz.id} className="arena-deck-card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <span className="badge b-prog">{quiz.visibility}</span>
-                    <span style={{ fontFamily: 'var(--f-mono)', fontSize: '0.8125rem', color: 'var(--muted)' }}>
-                      {quiz.owner || 'Community'}
-                    </span>
+              {(decksSubTab === 'discover' ? discoverQuizzes : myQuizzes)
+                .filter((quiz) => {
+                  if (!librarySearchQuery.trim()) return true
+                  const q = librarySearchQuery.toLowerCase().trim()
+                  return (
+                    (quiz.title || '').toLowerCase().includes(q) ||
+                    (quiz.description || '').toLowerCase().includes(q) ||
+                    (quiz.owner || '').toLowerCase().includes(q)
+                  )
+                })
+                .map((quiz) => (
+                  <div key={quiz.id} className="arena-deck-card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <span className="badge b-prog">{quiz.visibility}</span>
+                      <span style={{ fontFamily: 'var(--f-mono)', fontSize: '0.8125rem', color: 'var(--muted)' }}>
+                        {quiz.owner || 'Community'}
+                      </span>
+                    </div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{quiz.title}</h3>
+                    <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.875rem' }}>
+                      {quiz.description || 'Active recall study questions.'}
+                    </p>
+                    <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.75rem', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.8125rem', color: 'var(--muted)' }}>
+                        {quiz.question_count || 0} Questions
+                      </span>
+                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                        {user && quiz.owner === user.username && (
+                          <>
+                            <button
+                              type="button"
+                              className="btn ghost"
+                              style={{ fontSize: '0.8125rem', padding: '0.3rem 0.55rem' }}
+                              onClick={() => handleLoadQuizForEdit(quiz.id)}
+                              title="Edit this deck"
+                            >
+                              ✏️ Edit
+                            </button>
+                            <button
+                              type="button"
+                              className="btn ghost danger"
+                              style={{ fontSize: '0.8125rem', padding: '0.3rem 0.55rem' }}
+                              onClick={() => handleDeleteQuiz(quiz.id)}
+                              title="Delete this deck"
+                            >
+                              🗑️
+                            </button>
+                          </>
+                        )}
+                        <button
+                          type="button"
+                          className="btn primary"
+                          style={{ fontSize: '0.8125rem', padding: '0.35rem 0.75rem' }}
+                          onClick={() => handleHostLaunch(quiz.id)}
+                        >
+                          ⚡ Host Match
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{quiz.title}</h3>
-                  <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.875rem' }}>
-                    {quiz.description || 'Active recall study questions.'}
-                  </p>
-                  <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.75rem', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '0.8125rem', color: 'var(--muted)' }}>
-                      {quiz.question_count || 0} Questions
-                    </span>
-                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                      {user && quiz.owner === user.username && (
-                        <>
-                          <button
-                            type="button"
-                            className="btn ghost"
-                            style={{ fontSize: '0.8125rem', padding: '0.3rem 0.55rem' }}
-                            onClick={() => handleLoadQuizForEdit(quiz.id)}
-                            title="Edit this deck"
-                          >
-                            ✏️ Edit
-                          </button>
-                          <button
-                            type="button"
-                            className="btn ghost danger"
-                            style={{ fontSize: '0.8125rem', padding: '0.3rem 0.55rem' }}
-                            onClick={() => handleDeleteQuiz(quiz.id)}
-                            title="Delete this deck"
-                          >
-                            🗑️
-                          </button>
-                        </>
-                      )}
+                ))}
+
+              {(decksSubTab === 'discover' ? discoverQuizzes : myQuizzes).filter((quiz) => {
+                if (!librarySearchQuery.trim()) return true
+                const q = librarySearchQuery.toLowerCase().trim()
+                return (
+                  (quiz.title || '').toLowerCase().includes(q) ||
+                  (quiz.description || '').toLowerCase().includes(q) ||
+                  (quiz.owner || '').toLowerCase().includes(q)
+                )
+              }).length === 0 && (
+                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', background: 'var(--surface)', borderRadius: 'var(--radius-lg)' }}>
+                  {librarySearchQuery ? (
+                    <div>
+                      <p style={{ color: 'var(--muted)', margin: '0 0 1rem' }}>
+                        No decks found matching "<strong>{librarySearchQuery}</strong>".
+                      </p>
+                      <button
+                        type="button"
+                        className="btn line"
+                        onClick={() => setLibrarySearchQuery('')}
+                      >
+                        Clear Search
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <p style={{ color: 'var(--muted)', margin: '0 0 1rem' }}>
+                        {decksSubTab === 'mine'
+                          ? 'You have not created any decks yet. Build your first deck now!'
+                          : 'No public community decks found yet.'}
+                      </p>
                       <button
                         type="button"
                         className="btn primary"
-                        style={{ fontSize: '0.8125rem', padding: '0.35rem 0.75rem' }}
-                        onClick={() => handleHostLaunch(quiz.id)}
+                        onClick={() => handleSelectTab('create')}
                       >
-                        Host Match ▶
+                        + Create New Deck
                       </button>
                     </div>
-                  </div>
-                </div>
-              ))}
-
-              {(decksSubTab === 'mine' ? myQuizzes : discoverQuizzes).length === 0 && (
-                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', background: 'var(--surface)', borderRadius: 'var(--radius-lg)' }}>
-                  <p style={{ color: 'var(--muted)', margin: '0 0 1rem' }}>
-                    {decksSubTab === 'mine'
-                      ? 'You have not created any decks yet. Build your first deck now!'
-                      : 'No public community decks found yet.'}
-                  </p>
-                  <button
-                    type="button"
-                    className="btn primary"
-                    onClick={() => handleSelectTab('create')}
-                  >
-                    + Create New Deck
-                  </button>
+                  )}
                 </div>
               )}
             </div>

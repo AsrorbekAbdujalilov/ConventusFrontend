@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Classic Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=Hanken+Grotesk:wght@400;500;600&display=swap">
+<style>
+/* Layout: a quiz on one side of a tab, the teacher dashboard on the other. The dashboard is a toolbar (view, metric, flag) above one large chart area. */
+:root{
+  --bg:#f1f3f6; --surface:#ffffff; --surface2:#e6e9f0; --line:#c9d0dd;
+  --fg:#161a26; --muted:#556077; --accent:#4338ca; --on-accent:#ffffff;
+  --good:#17803f; --bad:#b4342a; --warn:#a15c00; --you:#1d5fa8;
+  --f-display:'Bricolage Grotesque','Arial Narrow',system-ui,sans-serif;
+  --f-body:'Hanken Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12131a; --surface:#1b1d29; --surface2:#262938; --line:#363a4f;
+    --fg:#eceef6; --muted:#9aa1b8; --accent:#9ea0ff; --on-accent:#12131a;
+    --good:#5fd08e; --bad:#ff8478; --warn:#ffc15e; --you:#7db7f2; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12131a; --surface:#1b1d29; --surface2:#262938; --line:#363a4f;
+  --fg:#eceef6; --muted:#9aa1b8; --accent:#9ea0ff; --on-accent:#12131a;
+  --good:#5fd08e; --bad:#ff8478; --warn:#ffc15e; --you:#7db7f2; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.45}
+.wrap{max-width:980px;margin:0 auto;padding-block:22px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(2.2rem,8vw,3.3rem);line-height:1.02}
+h2{font-size:1.4rem}
+h3{font-size:1.05rem;color:var(--muted);font-weight:600}
+p{margin:0}
+.muted{color:var(--muted)}
+.lede{color:var(--muted);max-width:60ch;margin-top:8px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.grid>*{min-width:0}
+.field{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--muted)}
+.field input,.field select,.tool select,.tool input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:9px 10px;width:100%}
+.hint{font-size:.85rem;color:var(--muted)}
+button{font:inherit;color:inherit}
+.btn{background:var(--surface2);border:1px solid var(--line);border-radius:7px;padding:10px 16px;cursor:pointer;font-weight:600}
+.btn:hover:not(:disabled){border-color:var(--muted)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.small{padding:6px 11px;font-size:.88rem}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#errs{color:var(--bad);font-weight:600;display:flex;flex-direction:column;gap:3px}
+.note{border-left:3px solid var(--accent);padding:6px 12px;background:var(--bg);font-size:.92rem;color:var(--muted)}
+.note b{color:var(--fg)}
+
+/* header + tabs */
+.strip{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;justify-content:space-between;border-bottom:2px solid var(--fg);padding-bottom:8px;margin-bottom:14px}
+.strip .big{font-family:var(--f-display);font-weight:800;font-size:1.7rem;line-height:1}
+.strip .clock{color:var(--muted)}
+.tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+
+/* question */
+.qtext{font-family:var(--f-display);font-size:clamp(1.5rem,5vw,2.1rem);font-weight:700;line-height:1.15;text-wrap:balance}
+.tbar{height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.tbar>i{display:block;height:100%;width:100%;background:var(--accent)}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:520px){.opts{grid-template-columns:minmax(0,1fr)}}
+.opts .btn{text-align:left;padding:14px;font-size:1.02rem}
+.opts .ok{background:var(--good);border-color:var(--good);color:#06150d}
+.opts .bad{background:var(--bad);border-color:var(--bad);color:#1a0a08}
+.pts-big{font-family:var(--f-display);font-weight:800;font-size:2.4rem;line-height:1}
+
+/* tables */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-weight:600;font-size:.82rem;color:var(--muted)}
+th.l,td.l{text-align:left;white-space:normal}
+tr.you td{color:var(--you);font-weight:600}
+tr.flag td:first-child{box-shadow:inset 3px 0 0 var(--bad)}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{color:var(--fg)}
+th.cur,td.cur{background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.champ{font-family:var(--f-display);font-weight:800;font-size:clamp(1.8rem,6vw,2.7rem);line-height:1.05}
+
+/* dashboard */
+.dtools{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.tool{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted);min-width:0}
+.tool select{width:auto;min-width:11em}
+.tool input{width:6em}
+.dsum{display:flex;gap:18px;flex-wrap:wrap;font-size:.92rem;color:var(--muted)}
+.dsum b{color:var(--fg);font-variant-numeric:tabular-nums}
+.dchart{width:100%}
+.dchart svg{display:block;width:100%;height:auto}
+.hscroll{overflow-x:auto}
+.bub circle{stroke:var(--bg);stroke-width:2}
+.bub.flag circle{stroke:var(--bad);stroke-width:4}
+.bub.nodata circle{fill:var(--surface2)}
+.bub text{fill:#10131a;text-anchor:middle;pointer-events:none;font-family:var(--f-body);font-weight:600}
+.bub.nodata text{fill:var(--muted)}
+.axis{stroke:var(--line);stroke-width:1}
+.axt{fill:var(--muted);font-size:11px;font-family:var(--f-body)}
+.axl{fill:var(--fg);font-size:11px;font-family:var(--f-body)}
+.vb text.val{fill:var(--fg);font-size:11px;text-anchor:middle;font-variant-numeric:tabular-nums}
+.hrow{display:grid;grid-template-columns:minmax(6em,9em) minmax(0,1fr) 4.5em;gap:10px;align-items:center;padding:4px 0}
+.hrow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hrow.flag .nm{color:var(--bad);font-weight:600}
+.hrow .trk{height:18px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.hrow .trk i{display:block;height:100%;border-radius:4px}
+.hrow .v{text-align:right;font-variant-numeric:tabular-nums}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);align-items:center}
+.legend .ramp{display:inline-block;width:90px;height:10px;border-radius:5px;background:linear-gradient(90deg,hsl(0 70% 62%),hsl(60 70% 62%),hsl(125 70% 62%));vertical-align:middle;margin:0 6px}
+.legend .ring{display:inline-block;width:12px;height:12px;border-radius:50%;border:3px solid var(--bad);vertical-align:-2px;margin-right:5px}
+@media (max-width:480px){.hide-s{display:none}th,td{padding:7px 5px}.hrow{grid-template-columns:minmax(4em,6em) minmax(0,1fr) 3.6em}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- SETUP -->
+<section id="setup" class="stack">
+  <div>
+    <h1>Classic Quiz</h1>
+    <p class="lede">Answer fast and answer right. Correct answers score points, and a teacher dashboard shows how every player is doing as circles, bars, a table or a scatter plot.</p>
+  </div>
+
+  <div class="card stack">
+    <h2>Game</h2>
+    <div class="grid">
+      <label class="field">Players (2 to 40)<input id="players" type="number" min="2" max="40" step="1"></label>
+      <label class="field">Questions (1 to 30)<input id="questions" type="number" min="1" max="30" step="1"></label>
+      <label class="field">Seconds per question (5 to 60)<input id="qTime" type="number" min="5" max="60" step="1"></label>
+      <label class="field">Your seat
+        <select id="seat"><option value="player">Play as Player 1</option><option value="spectator">Spectator (all bots)</option></select></label>
+      <label class="field">Bot skill
+        <select id="difficulty"><option value="easy">Easy</option><option value="normal">Normal</option><option value="hard">Hard</option></select></label>
+      <label class="field">Seed (blank = random)<input id="seed" type="text" maxlength="24" autocomplete="off"></label>
+    </div>
+  </div>
+
+  <div class="card stack">
+    <h2>Scoring</h2>
+    <div class="grid">
+      <label class="field">Scoring mode
+        <select id="scoring"><option value="speed">Speed: points drop with answer time</option><option value="rank">Rank: points drop with finishing place</option></select></label>
+      <label class="field">Points for the best answer<input id="maxPts" type="number" min="10" max="1000" step="10"></label>
+      <label class="field" id="slowField">Slowest correct answer scores (% of best)<input id="slowPct" type="number" min="0" max="90" step="5"></label>
+    </div>
+    <div class="note" id="scoreNote"></div>
+    <div class="grid">
+      <label class="field">Dashboard flags players with accuracy below (%)<input id="flagAcc" type="number" min="0" max="100" step="5"></label>
+    </div>
+  </div>
+
+  <div id="errs" role="alert" aria-live="polite"></div>
+  <div class="row"><button class="btn primary" id="start" type="button">Start quiz</button></div>
+</section>
+
+<!-- GAME -->
+<section id="game" hidden>
+  <div class="strip"><span class="big" id="gTitle"></span><span class="clock" id="gClock"></span></div>
+  <div id="quizArea" class="stack"></div>
+  <div id="dashArea" class="card stack" hidden></div>
+</section>
+
+<!-- FINAL -->
+<section id="final" class="stack" hidden></section>
+
+</div>
+
+<script>
+/*ENGINE_START*/
+const QUESTIONS = [
+  {q:'What is the capital of Uzbekistan?', a:['Tashkent','Samarkand','Bukhara','Khiva'], c:0},
+  {q:'Which city is famous for the Registan square?', a:['Samarkand','Tashkent','Andijan','Nukus'], c:0},
+  {q:'Which Central Asian sea has nearly disappeared?', a:['Aral Sea','Caspian Sea','Black Sea','Dead Sea'], c:0},
+  {q:'What is the capital of Kazakhstan?', a:['Astana','Almaty','Bishkek','Dushanbe'], c:0},
+  {q:'Which mountains cover much of Tajikistan?', a:['Pamir','Alps','Andes','Urals'], c:0},
+  {q:'Which lake is the largest in Kyrgyzstan?', a:['Issyk-Kul','Baikal','Balkhash','Sarez'], c:0},
+  {q:'Which ruler made Samarkand his capital in the 14th century?', a:['Amir Timur','Genghis Khan','Babur','Ulugh Beg'], c:0},
+  {q:'The Silk Road linked China with…', a:['The Mediterranean','Australia','Brazil','Canada'], c:0},
+  {q:'7 × 8 = ?', a:['56','54','48','64'], c:0},
+  {q:'What is the square root of 144?', a:['12','14','11','16'], c:0},
+  {q:'Which planet is called the Red Planet?', a:['Mars','Venus','Jupiter','Mercury'], c:0},
+  {q:'What is the chemical formula of water?', a:['H₂O','CO₂','O₂','NaCl'], c:0}
+];
+const NAMES = ['Aziza','Timur','Dilnoza','Bekzod','Madina','Jasur','Zarina','Rustam','Nodira','Sardor','Malika','Otabek','Gulnora','Farrukh','Kamola','Sherzod','Laylo','Ulugbek','Aibek','Aigerim','Nurlan','Dana','Askar','Zhanar','Bolat','Aliya','Emir','Meerim','Tilek','Aida','Daniyar','Saltanat'];
+const DIFF = {easy:{acc:.55,t:9}, normal:{acc:.75,t:6.5}, hard:{acc:.9,t:4.5}};
+const DEFAULTS = {players:12, questions:10, qTime:15, seat:'player', difficulty:'normal', seed:'', scoring:'speed', maxPts:100, slowPct:50, flagAcc:50};
+
+const clone=o=>JSON.parse(JSON.stringify(o));
+const r3=x=>Math.round(x*1000)/1000;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+function mulberry32(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shuffle(a,R){for(let i=a.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function gauss(R){let u=0,v=0;while(!u)u=R();while(!v)v=R();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+
+function validate(S){
+  const e=[], int=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
+  if(!int(S.players,2,40)) e.push('Players must be a whole number from 2 to 40.');
+  if(!int(S.questions,1,30)) e.push('Questions must be a whole number from 1 to 30.');
+  if(!int(S.qTime,5,60)) e.push('Seconds per question must be a whole number from 5 to 60.');
+  if(!DIFF[S.difficulty]) e.push('Choose a bot skill.');
+  if(S.scoring!=='speed'&&S.scoring!=='rank') e.push('Choose a scoring mode.');
+  if(!int(S.maxPts,10,1000)) e.push('Points for the best answer must be a whole number from 10 to 1000.');
+  if(S.scoring==='speed'&&!int(S.slowPct,0,90)) e.push('Slowest correct answer must be a whole number from 0 to 90 percent.');
+  if(!int(S.flagAcc,0,100)) e.push('The accuracy flag must be a whole number from 0 to 100.');
+  return e;
+}
+
+/* ---------- scoring ---------- */
+// speed: best = maxPts at 0 s, falling in a straight line to slowPct % of maxPts at the time limit
+// rank:  rank r among the correct answers scores maxPts * (N - r + 1) / N, N = players in the lobby; equal times share a rank
+function scoreAnswers(S,answers,N){
+  const out={}, ok=answers.filter(a=>a.c).sort((x,y)=>x.t-y.t);
+  for(const a of answers) out[a.id]=0;
+  if(S.scoring==='speed'){
+    const f=S.slowPct/100;
+    for(const a of ok) out[a.id]=Math.round(S.maxPts*(1-(1-f)*Math.min(1,a.t/S.qTime)));
+  } else {
+    let rank=0,last=null;
+    ok.forEach((a,i)=>{ if(last===null||a.t!==last){ rank=i+1; last=a.t; } out[a.id]=Math.round(S.maxPts*(N-rank+1)/N); });
+  }
+  return out;
+}
+
+/* ---------- game ---------- */
+function createGame(S,seed){
+  const R=mulberry32(seed>>>0), n=S.players, base=DIFF[S.difficulty], humanId=S.seat==='spectator'?-1:0;
+  const names=shuffle(NAMES.slice(),R), scale=Math.min(1.5,S.qTime/15), players=[];
+  for(let i=0;i<n;i++){
+    const z=gauss(R);
+    players.push({id:i,name:i===humanId?'You':(names[i]||`Student ${i+1}`),human:i===humanId,
+      acc:clamp(base.acc+.09*z,.2,.97), tm:clamp(base.t*scale*Math.exp(-.18*z),.9,S.qTime*.8)});
+  }
+  return {S:clone(S),R,players,humanId,q:0,over:false,bag:[],cur:null,log:[],last:null};
+}
+function botAnswer(G,p){
+  const R=G.R, q=G.S.qTime; let t=Math.max(.8,p.tm*Math.exp(.35*gauss(R))), c=R()<p.acc;
+  if(t>=q){ t=q; c=false; }
+  return {c,t:r3(t)};
+}
+function drawQ(G){ if(!G.bag.length) G.bag=shuffle(QUESTIONS.map((_,i)=>i),G.R); return G.bag.pop(); }
+function beginQuestion(G){
+  G.q++; const cur={q:G.q,qi:drawQ(G),ans:{},resolved:false};
+  for(const p of G.players) if(!p.human) cur.ans[p.id]=botAnswer(G,p);
+  G.cur=cur; return cur;
+}
+const humanPending=G=>!!(G.cur&&!G.cur.resolved&&G.humanId>=0&&!(G.humanId in G.cur.ans));
+function answerHuman(G,res){ G.cur.ans[G.humanId]=res; }
+function resolveQuestion(G){
+  const cur=G.cur, list=G.players.map(p=>({id:p.id,c:cur.ans[p.id].c,t:cur.ans[p.id].t}));
+  const pts=scoreAnswers(G.S,list,G.players.length);
+  const ok=list.filter(a=>a.c).sort((x,y)=>x.t-y.t), rankOf={}; ok.forEach((a,i)=>{ rankOf[a.id]=i+1; });
+  for(const a of list) G.log.push({p:a.id,q:G.q,c:a.c,t:a.t,pts:pts[a.id]});
+  cur.resolved=true;
+  const res={q:G.q,pts,rankOf,correctCount:ok.length,list};
+  G.last=res; if(G.q>=G.S.questions) G.over=true; return res;
+}
+
+/* ---------- stats shared with the dashboard ---------- */
+function computeStats(players,log){
+  return players.map(p=>{
+    const mine=log.filter(x=>x.p===p.id), ok=mine.filter(x=>x.c), times=ok.map(x=>x.t);
+    const asked=mine.length, correct=ok.length;
+    return {id:p.id,name:p.name,human:p.human,asked,correct,
+      points:mine.reduce((s,x)=>s+x.pts,0),
+      accuracy:asked?Math.round(100*correct/asked):null,
+      avgTime:times.length?r3(times.reduce((a,b)=>a+b,0)/times.length):null,
+      minTime:times.length?Math.min(...times):null,
+      maxTime:times.length?Math.max(...times):null};
+  });
+}
+const METRICS=[
+  {k:'points',label:'Points',better:'high',fmt:v=>String(v)},
+  {k:'correct',label:'Correct answers',better:'high',fmt:v=>String(v)},
+  {k:'avgTime',label:'Average time',better:'low',fmt:v=>v.toFixed(1)+'s'},
+  {k:'minTime',label:'Lowest time',better:'low',fmt:v=>v.toFixed(1)+'s'},
+  {k:'accuracy',label:'Accuracy',better:'high',fmt:v=>v+'%'},
+  {k:'maxTime',label:'Highest time',better:'low',fmt:v=>v.toFixed(1)+'s'}
+];
+// 0 = worst, 1 = best within this group, or null when the player has no value
+function goodness(m,stats){
+  const vals=stats.map(s=>s[m.k]).filter(v=>v!=null), lo=Math.min(...vals), hi=Math.max(...vals), out={};
+  for(const s of stats){ const v=s[m.k]; if(v==null){ out[s.id]=null; continue; }
+    const g=hi===lo?.5:(v-lo)/(hi-lo); out[s.id]=m.better==='high'?g:1-g; }
+  return out;
+}
+
+/* ---------- circle packing: touching circles gathered around the centre ---------- */
+function packLayout(items,W,H){
+  const R=mulberry32(20240607), nodes=items.map(it=>({id:it.id,r:it.r,x:W/2+(R()-.5)*W*.3,y:H/2+(R()-.5)*H*.3}));
+  for(let iter=0;iter<500;iter++){
+    const pull=iter<350?.03:.01;
+    for(const n of nodes){ n.x+=(W/2-n.x)*pull; n.y+=(H/2-n.y)*pull; }
+    for(let i=0;i<nodes.length;i++) for(let j=i+1;j<nodes.length;j++){
+      const a=nodes[i],b=nodes[j]; let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy); const min=a.r+b.r+2;
+      if(d<min){ if(d<1e-6){ dx=R()-.5; dy=R()-.5; d=Math.hypot(dx,dy); } const push=(min-d)/2; a.x-=dx/d*push; a.y-=dy/d*push; b.x+=dx/d*push; b.y+=dy/d*push; }
+    }
+  }
+  // settle: push apart until nothing overlaps (circles keep a 2 unit gap, so a small tolerance is fine)
+  for(let iter=0;iter<3000;iter++){
+    let worst=0;
+    for(let i=0;i<nodes.length;i++) for(let j=i+1;j<nodes.length;j++){
+      const a=nodes[i],b=nodes[j]; let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy); const min=a.r+b.r+1;
+      if(d<min){ worst=Math.max(worst,min-d); if(d<1e-6){ dx=R()-.5; dy=R()-.5; d=Math.hypot(dx,dy); } const push=(min-d)/2; a.x-=dx/d*push; a.y-=dy/d*push; b.x+=dx/d*push; b.y+=dy/d*push; }
+    }
+    if(worst<.01) break;
+  }
+  // scale and centre the cluster to fill the area
+  let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+  for(const n of nodes){ x0=Math.min(x0,n.x-n.r); x1=Math.max(x1,n.x+n.r); y0=Math.min(y0,n.y-n.r); y1=Math.max(y1,n.y+n.r); }
+  const k=Math.min((W-8)/(x1-x0),(H-8)/(y1-y0)), cx=(x0+x1)/2, cy=(y0+y1)/2, out={};
+  for(const n of nodes) out[n.id]={x:W/2+(n.x-cx)*k,y:H/2+(n.y-cy)*k,r:n.r*k};
+  return out;
+}
+function simulate(S,seed){
+  const G=createGame(S,seed); let guard=0;
+  while(!G.over&&guard++<100){ beginQuestion(G); if(humanPending(G)) answerHuman(G,botAnswer(G,G.players[G.humanId])); resolveQuestion(G); }
+  return G;
+}
+/*ENGINE_END*/
+
+/* ================= UI ================= */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ft=s=>s.toFixed(1)+'s';
+let S=null,G=null,UI={phase:'idle',tab:'quiz'},timerH=null;
+
+const FIELDS={players:'n',questions:'n',qTime:'n',seat:'s',difficulty:'s',seed:'s',scoring:'s',maxPts:'n',slowPct:'n',flagAcc:'n'};
+function readS(){ const v={}; for(const k in FIELDS){ const el=$(k); v[k]=FIELDS[k]==='n'?(el.value.trim()===''?NaN:Number(el.value)):el.value.trim(); } return v; }
+function writeS(s){ for(const k in FIELDS) $(k).value=s[k]; syncScore(); }
+function syncScore(){
+  const speed=$('scoring').value==='speed', max=Number($('maxPts').value)||100, T=Number($('qTime').value)||15, f=(Number($('slowPct').value)||0)/100, n=Number($('players').value)||12;
+  $('slowField').hidden=!speed;
+  const sp=t=>Math.round(max*(1-(1-f)*t/T));
+  $('scoreNote').innerHTML=speed
+    ? `<b>Speed score:</b> a correct answer at 0 s scores ${max}, at ${Math.round(T/2)} s about ${sp(T/2)}, and at ${T} s ${sp(T)}. Wrong or missing answers score 0. The result does not depend on how many players are in the lobby.`
+    : `<b>Rank score:</b> among players who answered correctly, the fastest scores ${max} and each place after that scores ${(max/n).toFixed(1)} less (${max} ÷ ${n} players). Wrong or missing answers score 0. Equal times share a place.`;
+}
+for(const id of ['scoring','maxPts','slowPct','qTime','players']) $(id).addEventListener('input',syncScore);
+function saveS(s){ try{ localStorage.setItem('classicQuizSettings',JSON.stringify(s)); }catch(e){} }
+function loadS(){ try{ const j=localStorage.getItem('classicQuizSettings'); if(j){ const s=JSON.parse(j); if(s&&s.players&&s.scoring) return s; } }catch(e){} return null; }
+function hashSeed(str){ let h=1779033703^str.length; for(let i=0;i<str.length;i++){ h=Math.imul(h^str.charCodeAt(i),3432918353); h=h<<13|h>>>19; } return (h>>>0)||1; }
+function showErrs(e){ $('errs').innerHTML=e.map(x=>`<div>${esc(x)}</div>`).join(''); }
+
+$('start').onclick=()=>{
+  const s=readS(), e=validate(s); showErrs(e); if(e.length){ $('errs').scrollIntoView({block:'center'}); return; }
+  saveS(s); startGame(s);
+};
+function startGame(s){
+  S=s; const seed=S.seed?hashSeed(S.seed):Math.floor(Math.random()*4294967295)+1;
+  G=createGame(S,seed); UI={phase:'idle',tab:'quiz'}; DB.prev=null; DB.flag=S.flagAcc;
+  $('setup').hidden=true; $('final').hidden=true; $('game').hidden=false; scrollTo(0,0);
+  next();
+}
+function next(){
+  stopTimer();
+  if(G.over) return showFinal();
+  beginQuestion(G);
+  if(humanPending(G)){ openQuestion(); }
+  else { resolveQuestion(G); UI.phase='reveal'; render(); }
+}
+
+/* ---------- quiz views ---------- */
+function render(){
+  $('gTitle').textContent=`Question ${G.q} of ${G.S.questions}`;
+  $('gClock').textContent=`${G.players.length} players · ${G.S.scoring==='speed'?'speed':'rank'} scoring`;
+  const inQ=UI.phase==='question';
+  $('quizArea').hidden=!inQ; $('dashArea').hidden=inQ;
+  if(inQ){ $('quizArea').innerHTML=viewQuestion(); startTimer(); return; }
+  renderDash($('dashArea'));
+}
+function resultStrip(){
+  const r=G.last; if(!r||G.humanId<0) return '';
+  const me=r.list.find(a=>a.id===G.humanId), pts=r.pts[me.id];
+  const how=me.c?(G.S.scoring==='speed'?`Correct in ${ft(me.t)}.`:`Correct in ${ft(me.t)}, place ${r.rankOf[me.id]} of ${r.correctCount} correct.`):(me.t>=G.S.qTime-1e-9?'You did not answer in time.':'Wrong answer.');
+  return `<div class="row"><div class="pts-big">+${pts}</div><div><b>${how}</b><div class="muted">${r.correctCount} of ${G.players.length} players were correct.</div></div></div>`;
+}
+function viewQuestion(){
+  const q=UI.q, done=q.done;
+  const opts=q.opts.map((o,k)=>`<button class="btn ${done?(o.i===q.c?'ok':(k===q.pick?'bad':'')):''}" type="button" data-act="ans" data-k="${k}" ${done?'disabled':''}>${k+1}. ${esc(o.t)}</button>`).join('');
+  return `<div class="card stack"><div class="qtext">${esc(q.text)}</div><div class="tbar"><i id="tbar"></i></div><div class="opts">${opts}</div></div>`;
+}
+function openQuestion(){
+  const src=QUESTIONS[G.cur.qi];
+  UI.q={text:src.q,opts:shuffle(src.a.map((t,i)=>({t,i})),Math.random),c:src.c,start:performance.now(),done:false,pick:-1};
+  UI.phase='question'; render();
+}
+function submitAnswer(k){
+  const q=UI.q; if(!q||q.done) return;
+  const secs=Math.min(G.S.qTime,(performance.now()-q.start)/1000), timeout=k<0||secs>=G.S.qTime;
+  const res=timeout?{c:false,t:G.S.qTime}:{c:q.opts[k].i===q.c,t:r3(Math.max(.05,secs))};
+  q.done=true; q.pick=k; stopTimer();
+  answerHuman(G,res); resolveQuestion(G);
+  $('quizArea').innerHTML=viewQuestion();
+  setTimeout(()=>{ UI.phase='reveal'; render(); },timeout?200:900);
+}
+function startTimer(){
+  stopTimer();
+  timerH=setInterval(()=>{
+    const q=UI.q; if(!q||q.done||UI.phase!=='question') return stopTimer();
+    const left=G.S.qTime-(performance.now()-q.start)/1000, bar=$('tbar');
+    if(bar) bar.style.width=Math.max(0,left/G.S.qTime*100)+'%';
+    if(left<=0) submitAnswer(-1);
+  },100);
+}
+function stopTimer(){ if(timerH){ clearInterval(timerH); timerH=null; } }
+
+/* ---------- teacher dashboard ---------- */
+const DB={metric:'points',view:'circles',order:'best',sortKey:'points',sortDir:-1,flag:50,prev:null,anim:null};
+const VIEWS=[['circles','Circles'],['hbars','Horizontal bars'],['vbars','Vertical bars'],['table','Table'],['scatter','Scatter']];
+const metricOf=k=>METRICS.find(m=>m.k===k);
+const col=g=>`hsl(${Math.round(g*125)} 70% 62%)`;
+const isFlag=s=>s.accuracy!=null&&s.accuracy<DB.flag;
+
+function renderDash(el){
+  const st=computeStats(G.players,G.log), m=metricOf(DB.metric);
+  if(!G.log.length){ el.innerHTML='<h3>Teacher dashboard</h3><p class="muted">No answers yet.</p>'; return; }
+  const useMetric=DB.view==='circles'||DB.view==='hbars'||DB.view==='vbars';
+  const seg=VIEWS.map(([k,l])=>`<button class="btn small ${DB.view===k?'on':''}" type="button" data-db="view" data-v="${k}">${l}</button>`).join('');
+  const sel=METRICS.map(x=>`<option value="${x.k}" ${x.k===DB.metric?'selected':''}>${x.label}</option>`).join('');
+  const tot=st.filter(s=>s.asked); const flagged=tot.filter(isFlag).length;
+  const accs=tot.map(s=>s.accuracy), avgAcc=accs.length?Math.round(accs.reduce((a,b)=>a+b,0)/accs.length):0;
+  const ts=st.map(s=>s.avgTime).filter(v=>v!=null), avgT=ts.length?ts.reduce((a,b)=>a+b,0)/ts.length:null;
+  const tools=`<div class="dtools"><div class="tool">View<div class="seg" role="group" aria-label="Chart type">${seg}</div></div>
+    <label class="tool">Show<select id="dbMetric" ${useMetric?'':'disabled'} aria-label="Metric">${sel}</select></label>
+    ${(DB.view==='hbars'||DB.view==='vbars')?`<div class="tool">Order<div class="seg"><button class="btn small ${DB.order==='best'?'on':''}" type="button" data-db="order" data-v="best">Best first</button><button class="btn small ${DB.order==='worst'?'on':''}" type="button" data-db="order" data-v="worst">Worst first</button></div></div>`:''}
+    <label class="tool">Flag accuracy below %<input id="dbFlag" type="number" min="0" max="100" step="5" value="${DB.flag}"></label></div>`;
+  const sum=`<div class="dsum"><span>Class accuracy <b>${avgAcc}%</b></span><span>Average answer time <b>${avgT==null?'–':ft(avgT)}</b></span><span>Flagged <b>${flagged}</b> of ${tot.length}</span></div>`;
+  let body='', legend='';
+  if(DB.view==='circles'){ body=`<div class="dchart" id="dbChart">${circlesSVG(st,m)}</div>`; legend=colorLegend(m,true); }
+  else if(DB.view==='hbars'){ body=`<div class="dchart">${hbarsHTML(st,m)}</div>`; legend=colorLegend(m,false); }
+  else if(DB.view==='vbars'){ body=`<div class="dchart hscroll">${vbarsSVG(st,m)}</div>`; legend=colorLegend(m,false); }
+  else if(DB.view==='table'){ body=`<div class="dchart tw">${tableHTML(st)}</div>`; legend=`<div class="legend"><span><span class="ring"></span>Accuracy below ${DB.flag}%</span><span>Click a column heading to sort</span></div>`; }
+  else { body=`<div class="dchart">${scatterSVG(st)}</div>`; legend=`<div class="legend"><span>Each dot is a player. Up means faster, right means more accurate.</span></div>`; }
+  const live=UI.phase==='reveal'&&el.id==='dashArea';
+  const nextBtn=live?(G.over?'<button class="btn small primary" type="button" data-act="final">See final results</button>':'<button class="btn small primary" type="button" data-act="next">Next question</button>'):'';
+  el.innerHTML=`<div class="row" style="justify-content:space-between"><h3>Teacher dashboard${live?` · after question ${G.q} of ${G.S.questions}`:''}</h3>${nextBtn}</div>${live?resultStrip():''}${tools}${sum}${body}${legend}${live&&nextBtn?`<div class="row">${nextBtn.replace('btn small','btn')}</div>`:''}`;
+  if(DB.view==='circles') animateCircles();
+}
+function colorLegend(m,showRing){
+  return `<div class="legend"><span>Worse<span class="ramp"></span>Better</span><span>${m.better==='low'?'Lower is better. Circle and bar size shows the value.':'Higher is better. Circle and bar size shows the value.'}</span>${showRing?`<span><span class="ring"></span>Accuracy below ${DB.flag}%</span>`:''}</div>`;
+}
+function circlesSVG(st,m){
+  const W=640,H=440, vals=st.map(s=>s[m.k]), max=Math.max(0,...vals.filter(v=>v!=null)), RM=100;
+  const items=st.map(s=>{ const v=s[m.k]; const f=v==null?.2:Math.max(.25,max>0?Math.sqrt(v/max):.25); return {id:s.id,r:RM*f}; });
+  const lay=packLayout(items,W,H), good=goodness(m,st);
+  DB.next=lay;
+  const g=st.map(s=>{
+    const v=s[m.k], L=lay[s.id], g0=good[s.id];
+    return `<g class="bub ${v==null?'nodata':''} ${isFlag(s)?'flag':''}" data-id="${s.id}"><title>${esc(s.name)}: ${v==null?'no data':m.fmt(v)}</title><circle cx="${L.x.toFixed(1)}" cy="${L.y.toFixed(1)}" r="${L.r.toFixed(1)}" ${v==null?'':`fill="${col(g0)}"`}/><text class="nm"></text><text class="vl"></text></g>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Players as circles sized by ${m.label}">${g}</svg>`;
+}
+function labelCircle(gEl,s,m,L){
+  const nm=gEl.querySelector('.nm'), vl=gEl.querySelector('.vl'), v=s[m.k];
+  const fs=clamp(L.r*.36,7,22);
+  if(L.r<11){ nm.textContent=''; vl.textContent=''; return; }
+  const chars=Math.max(2,Math.floor(2*L.r*.85/(fs*.56)));
+  const name=s.name.length>chars?s.name.slice(0,chars-1)+'…':s.name;
+  nm.textContent=name; nm.setAttribute('x',L.x.toFixed(1)); nm.setAttribute('y',(L.y-fs*.15).toFixed(1)); nm.setAttribute('font-size',fs.toFixed(1));
+  vl.textContent=v==null?'–':m.fmt(v); vl.setAttribute('x',L.x.toFixed(1)); vl.setAttribute('y',(L.y+fs*1.05).toFixed(1)); vl.setAttribute('font-size',(fs*.95).toFixed(1));
+}
+function animateCircles(){
+  const root=$('dbChart'); if(!root) return;
+  const st=computeStats(G.players,G.log), m=metricOf(DB.metric), to=DB.next, from=DB.prev&&Object.keys(DB.prev).length===Object.keys(to).length?DB.prev:to;
+  const els={}; root.querySelectorAll('.bub').forEach(g=>{ els[g.dataset.id]=g; });
+  if(DB.anim) cancelAnimationFrame(DB.anim);
+  const t0=performance.now(), D=450, reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const frame=now=>{
+    const k=reduce||from===to?1:Math.min(1,(now-t0)/D), e=1-Math.pow(1-k,3);
+    for(const s of st){ const a=from[s.id],b=to[s.id],g=els[s.id]; if(!g) continue;
+      const L={x:a.x+(b.x-a.x)*e,y:a.y+(b.y-a.y)*e,r:a.r+(b.r-a.r)*e}, c=g.querySelector('circle');
+      c.setAttribute('cx',L.x.toFixed(1)); c.setAttribute('cy',L.y.toFixed(1)); c.setAttribute('r',Math.max(1,L.r).toFixed(1));
+      labelCircle(g,s,m,L); }
+    if(k<1) DB.anim=requestAnimationFrame(frame); else { DB.anim=null; DB.prev=to; }
+  };
+  DB.anim=requestAnimationFrame(frame);
+}
+function sortedForBars(st,m){
+  const good=goodness(m,st), rows=st.slice().sort((a,b)=>{
+    const va=a[m.k],vb=b[m.k]; if(va==null&&vb==null) return a.id-b.id; if(va==null) return 1; if(vb==null) return -1;
+    return (good[b.id]-good[a.id])||(a.id-b.id); });
+  if(DB.order==='worst'){ const have=rows.filter(r=>r[m.k]!=null).reverse(), none=rows.filter(r=>r[m.k]==null); return have.concat(none); }
+  return rows;
+}
+function hbarsHTML(st,m){
+  const good=goodness(m,st), max=Math.max(0,...st.map(s=>s[m.k]).filter(v=>v!=null))||1;
+  return sortedForBars(st,m).map(s=>{ const v=s[m.k];
+    return `<div class="hrow ${isFlag(s)?'flag':''}"><span class="nm" title="${esc(s.name)}">${esc(s.name)}${isFlag(s)?' ⚑':''}</span><span class="trk"><i style="width:${v==null?0:Math.max(1.5,v/max*100)}%;background:${v==null?'transparent':col(good[s.id])}"></i></span><span class="v">${v==null?'–':m.fmt(v)}</span></div>`; }).join('');
+}
+function vbarsSVG(st,m){
+  const rows=sortedForBars(st,m), good=goodness(m,st), max=Math.max(0,...st.map(s=>s[m.k]).filter(v=>v!=null))||1;
+  const bw=26,gap=10,left=34,top=22,ch=240,bot=96, W=Math.max(560,left+rows.length*(bw+gap)+10), H=top+ch+bot;
+  let g=`<line class="axis" x1="${left}" y1="${top+ch}" x2="${W-4}" y2="${top+ch}"/><line class="axis" x1="${left}" y1="${top}" x2="${left}" y2="${top+ch}"/>`;
+  g+=`<text class="axt" x="${left-6}" y="${top+ch+4}" text-anchor="end">0</text><text class="axt" x="${left-6}" y="${top+4}" text-anchor="end">${m.fmt(max).replace('s','')}</text>`;
+  rows.forEach((s,i)=>{ const v=s[m.k], x=left+gap+i*(bw+gap), h=v==null?0:Math.max(2,v/max*ch), y=top+ch-h;
+    g+=`<g class="vb"><title>${esc(s.name)}: ${v==null?'no data':m.fmt(v)}</title>`;
+    if(v!=null) g+=`<rect x="${x}" y="${y.toFixed(1)}" width="${bw}" height="${h.toFixed(1)}" rx="3" fill="${col(good[s.id])}"/><text class="val" x="${x+bw/2}" y="${(y-4).toFixed(1)}">${m.fmt(v).replace('s','')}</text>`;
+    else g+=`<text class="val" x="${x+bw/2}" y="${top+ch-4}">–</text>`;
+    g+=`<text class="axl" transform="translate(${x+bw/2},${top+ch+12}) rotate(-55)" text-anchor="end" ${isFlag(s)?'style="fill:var(--bad);font-weight:600"':''}>${esc(s.name)}${isFlag(s)?' ⚑':''}</text></g>`; });
+  return `<svg viewBox="0 0 ${W} ${H}" style="min-width:${W}px" role="img" aria-label="Vertical bars of ${m.label}">${g}</svg>`;
+}
+function tableHTML(st){
+  const cols=[['name','Player',true],['points','Points'],['correct','Correct'],['asked','Asked'],['avgTime','Avg time'],['minTime','Lowest'],['accuracy','Accuracy'],['maxTime','Highest']];
+  const key=DB.sortKey, dir=DB.sortDir;
+  const rows=st.slice().sort((a,b)=>{
+    const va=a[key],vb=b[key]; if(key==='name') return dir*String(va).localeCompare(String(vb));
+    if(va==null&&vb==null) return a.id-b.id; if(va==null) return 1; if(vb==null) return -1; return dir*(va-vb)||a.id-b.id; });
+  const fmtv=(k,v)=>v==null?'–':(k==='accuracy'?v+'%':/Time$/.test(k)?ft(v):v);
+  const head=cols.map(([k,l,left])=>`<th class="sortable ${left?'l':''} ${k===DB.metric?'cur':''}" data-db="sort" data-v="${k}" tabindex="0" aria-sort="${k===key?(dir>0?'ascending':'descending'):'none'}">${l}${k===key?(dir>0?' ▲':' ▼'):''}</th>`).join('');
+  const body=rows.map(s=>`<tr class="${s.human?'you':''} ${isFlag(s)?'flag':''}">${cols.map(([k,l,left])=>`<td class="${left?'l':''} ${k===DB.metric?'cur':''}">${k==='name'?esc(s.name):fmtv(k,s[k])}</td>`).join('')}</tr>`).join('');
+  return `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+function scatterSVG(st){
+  const W=640,H=420,L=52,R=16,T=18,B=44, pw=W-L-R, ph=H-T-B, Tm=G.S.qTime;
+  const x=a=>L+pw*(a/100), y=t=>T+ph*(t/Tm);               // faster = higher
+  const withT=st.filter(s=>s.avgTime!=null).map(s=>s.avgTime).sort((a,b)=>a-b), med=withT.length?withT[Math.floor((withT.length-1)/2)]:Tm/2;
+  let g=`<rect x="${L}" y="${T}" width="${pw}" height="${ph}" fill="none" class="axis"/>`;
+  for(const a of [0,25,50,75,100]) g+=`<text class="axt" x="${x(a)}" y="${T+ph+16}" text-anchor="middle">${a}%</text>`;
+  for(const t of [0,.25,.5,.75,1]) g+=`<text class="axt" x="${L-6}" y="${y(t*Tm)+4}" text-anchor="end">${(t*Tm).toFixed(0)}s</text>`;
+  g+=`<text class="axt" x="${L+pw/2}" y="${H-6}" text-anchor="middle">Accuracy</text><text class="axt" transform="translate(12,${T+ph/2}) rotate(-90)" text-anchor="middle">Average time of correct answers (faster is higher)</text>`;
+  g+=`<line x1="${x(DB.flag)}" y1="${T}" x2="${x(DB.flag)}" y2="${T+ph}" stroke="var(--bad)" stroke-dasharray="4 4"/><line x1="${L}" y1="${y(med)}" x2="${L+pw}" y2="${y(med)}" stroke="var(--muted)" stroke-dasharray="4 4"/>`;
+  g+=`<text class="axt" x="${L+pw-6}" y="${T+14}" text-anchor="end">Fast and accurate</text><text class="axt" x="${L+pw-6}" y="${T+ph-8}" text-anchor="end">Slow but accurate</text><text class="axt" x="${L+6}" y="${T+14}">Fast, often wrong</text><text class="axt" x="${L+6}" y="${T+ph-8}">Slow, often wrong</text>`;
+  const label=st.length<=16;
+  for(const s of st){ if(s.accuracy==null) continue;
+    const has=s.avgTime!=null, cx=x(s.accuracy), cy=y(has?s.avgTime:Tm), flag=isFlag(s);
+    g+=`<g><title>${esc(s.name)}: ${s.accuracy}% accurate, ${has?'average '+ft(s.avgTime):'no correct answers'}</title><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="7" fill="${has?(flag?'var(--bad)':'var(--accent)'):'none'}" stroke="${flag?'var(--bad)':'var(--accent)'}" stroke-width="2" opacity=".85"/>${label?`<text class="axl" x="${(cx+10).toFixed(1)}" y="${(cy+4).toFixed(1)}">${esc(s.name)}</text>`:''}</g>`; }
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Accuracy against average answer time">${g}</svg>`;
+}
+
+/* ---------- final ---------- */
+function showFinal(){
+  UI.phase='final'; $('game').hidden=true; $('final').hidden=false; scrollTo(0,0);
+  const st=computeStats(G.players,G.log).sort((a,b)=>b.points-a.points||b.correct-a.correct||a.id-b.id);
+  const top=st.filter(s=>s.points===st[0].points&&s.correct===st[0].correct);
+  const champ=top.length>1?`Shared win: ${top.map(s=>esc(s.name)).join(', ')}`:(top[0].human?'You win':`${esc(top[0].name)} wins`);
+  $('final').innerHTML=`<div class="card stack"><div class="champ">${champ}</div><p class="muted">${G.S.questions} question${G.S.questions===1?'':'s'}, ${G.players.length} players, ${G.S.scoring==='speed'?'speed':'rank'} scoring.</p></div>
+  <div class="card stack" id="finalDash"></div>
+  <div class="row"><button class="btn primary" type="button" data-act="again">Play again</button><button class="btn" type="button" data-act="setup">Change settings</button></div>`;
+  DB.view='table'; DB.sortKey='points'; DB.sortDir=-1; renderDash($('finalDash'));
+}
+
+/* ---------- events ---------- */
+function rerenderDash(){ const host=UI.phase==='final'?$('finalDash'):$('dashArea'); renderDash(host); }
+document.addEventListener('click',e=>{
+  const d=e.target.closest('[data-db]');
+  if(d&&G){
+    const a=d.dataset.db, v=d.dataset.v;
+    if(a==='view'){ DB.view=v; DB.prev=null; }
+    else if(a==='order') DB.order=v;
+    else if(a==='sort'){ if(DB.sortKey===v) DB.sortDir*=-1; else { DB.sortKey=v; DB.sortDir=(v==='name'||/Time$/.test(v))?1:-1; } }
+    rerenderDash(); return;
+  }
+  const b=e.target.closest('[data-act]'); if(!b||!G) return; const a=b.dataset.act;
+  if(a==='ans') submitAnswer(Number(b.dataset.k));
+  else if(a==='next') next();
+  else if(a==='final') showFinal();
+  else if(a==='again'){ const s=clone(S); s.seed=''; startGame(s); }
+  else if(a==='setup'){ stopTimer(); $('game').hidden=true; $('final').hidden=true; $('setup').hidden=false; scrollTo(0,0); }
+});
+document.addEventListener('change',e=>{
+  if(!G) return;
+  if(e.target.id==='dbMetric'){ DB.metric=e.target.value; rerenderDash(); }
+  else if(e.target.id==='dbFlag'){ const v=Number(e.target.value); if(Number.isInteger(v)&&v>=0&&v<=100){ DB.flag=v; rerenderDash(); } }
+});
+document.addEventListener('keydown',e=>{
+  if(e.target.matches&&e.target.matches('th.sortable')&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); e.target.click(); return; }
+  if(!G||UI.phase!=='question'||!UI.q||UI.q.done) return;
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+  const k='1234'.indexOf(e.key); if(k>=0&&k<UI.q.opts.length) submitAnswer(k);
+});
+
+writeS(loadS()||clone(DEFAULTS));
+</script>
+</body>
+</html>

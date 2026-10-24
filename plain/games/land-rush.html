@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Land Rush</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Source+Sans+3:wght@400;500;600&display=swap">
+<style>
+/* Layout: the map is the hero. Desktop puts the map on the left and the question panel above the league table on the right. On a phone the order is question, map, table. */
+:root{
+  --bg:#edf0f5; --surface:#fbfcfe; --surface2:#dfe5ee; --line:#bcc7d8;
+  --fg:#17202f; --muted:#516077; --on-fg:#f4f7fb;
+  --neutral:#d2d9e5; --hi:#d18a00; --good:#177a47; --bad:#b3372c; --you:#1d5fa8;
+  --f-display:'Rajdhani','Arial Narrow',Impact,sans-serif;
+  --f-body:'Source Sans 3',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1420; --surface:#161e2e; --surface2:#222d42; --line:#33415b;
+    --fg:#e9eef7; --muted:#97a6bf; --on-fg:#0e1420;
+    --neutral:#2a3550; --hi:#ffcf4d; --good:#5fd08e; --bad:#ff8478; --you:#7db7f2; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1420; --surface:#161e2e; --surface2:#222d42; --line:#33415b;
+  --fg:#e9eef7; --muted:#97a6bf; --on-fg:#0e1420;
+  --neutral:#2a3550; --hi:#ffcf4d; --good:#5fd08e; --bad:#ff8478; --you:#7db7f2; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.45}
+.wrap{max-width:1040px;margin:0 auto;padding-block:22px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin:0}
+h1{font-size:clamp(2.4rem,9vw,3.6rem);line-height:1}
+h2{font-size:1.5rem}
+h3{font-size:1.1rem;color:var(--muted)}
+p{margin:0}
+.muted{color:var(--muted)}
+.lede{color:var(--muted);max-width:60ch;margin-top:8px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.grid>*{min-width:0}
+.field{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--muted)}
+.field input,.field select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:9px 10px;width:100%}
+.hint{font-size:.85rem;color:var(--muted)}
+button{font:inherit;color:inherit}
+.btn{background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:10px 16px;cursor:pointer;font-weight:600}
+.btn:hover:not(:disabled){border-color:var(--muted)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:var(--fg);border-color:var(--fg);color:var(--on-fg)}
+.btn.small{padding:6px 10px;font-size:.85rem}
+:focus-visible{outline:2px solid var(--hi);outline-offset:2px}
+#errs{color:var(--bad);font-weight:600;display:flex;flex-direction:column;gap:3px}
+.note{border-left:3px solid var(--hi);padding:6px 12px;background:var(--bg);font-size:.92rem;color:var(--muted)}
+.note b{color:var(--fg)}
+
+/* header strip */
+.strip{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;justify-content:space-between;border-bottom:2px solid var(--fg);padding-bottom:8px;margin-bottom:14px}
+.strip .big{font-family:var(--f-display);font-weight:700;font-size:1.9rem;text-transform:uppercase;letter-spacing:.05em;line-height:1}
+.strip .clock{font-family:var(--f-display);font-size:1.2rem;color:var(--muted);letter-spacing:.03em}
+
+/* play area */
+.play{display:grid;gap:14px;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-areas:"map panel" "map board";align-items:start}
+#mapCard{grid-area:map}#panel{grid-area:panel}#board{grid-area:board}
+@media (max-width:820px){.play{grid-template-columns:minmax(0,1fr);grid-template-areas:"panel" "map" "board"}}
+.mapbox svg{display:block;width:100%;height:auto}
+.hx{stroke:var(--bg);stroke-width:1.6;transition:fill .25s}
+.hx.n{fill:var(--neutral)}
+.hx.pa{fill:hsl(var(--h) 62% 56%)}
+.hx.pb{fill:hsl(var(--h) 62% 68%)}
+.hx.mine{stroke:var(--fg);stroke-width:2.4}
+.hx.hi{stroke:var(--hi);stroke-width:3.6}
+.tl{font-family:var(--f-display);font-weight:700;font-size:11px;fill:#0f1620;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+
+/* question */
+.qtext{font-family:var(--f-display);font-size:clamp(1.55rem,5vw,2.1rem);font-weight:600;line-height:1.15;text-wrap:balance}
+.tbar{height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.tbar>i{display:block;height:100%;width:100%;background:var(--hi)}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:520px){.opts{grid-template-columns:minmax(0,1fr)}}
+.opts .btn{text-align:left;padding:13px;font-size:1.02rem}
+.opts .ok{background:var(--good);border-color:var(--good);color:#06150d}
+.opts .bad{background:var(--bad);border-color:var(--bad);color:#1a0a08}
+
+/* tables */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:6px 7px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-family:var(--f-display);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:.82rem;color:var(--muted)}
+th.l,td.l{text-align:left;white-space:normal}
+tr.you td{color:var(--you);font-weight:600}
+tr.out td{opacity:.55}
+td.up{color:var(--good);font-weight:700}td.dn{color:var(--bad);font-weight:700}
+.sw{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;font-family:var(--f-display);font-weight:700;font-size:.8rem;color:#0f1620}
+.sw.pa{background:hsl(var(--h) 62% 56%)}.sw.pb{background:hsl(var(--h) 62% 68%)}
+.bar2{display:inline-block;height:8px;border-radius:4px;background:var(--good);vertical-align:middle;min-width:2px}
+.bar2.low{background:var(--bad)}.bar2.mid{background:var(--hi)}
+.champ{font-family:var(--f-display);font-weight:700;font-size:clamp(1.8rem,6vw,2.8rem);text-transform:uppercase;line-height:1.05}
+@media (max-width:480px){.hide-s{display:none}th,td{padding:6px 4px}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- SETUP -->
+<section id="setup" class="stack">
+  <div>
+    <h1>Land Rush</h1>
+    <p class="lede">Answer quiz questions to claim hexagon tiles. Once the map is full, the fastest correct answers take land from the slowest players. Lose all your land and you are out.</p>
+  </div>
+
+  <div class="card stack">
+    <h2>Game</h2>
+    <div class="grid">
+      <label class="field">Players (3 to 30)<input id="players" type="number" min="3" max="30" step="1"></label>
+      <label class="field">Map size (N × N tiles, 3 to 20)<input id="size" type="number" min="3" max="20" step="1"></label>
+      <label class="field">Seconds per question (5 to 60)<input id="qTime" type="number" min="5" max="60" step="1"></label>
+      <label class="field">Points per tile<input id="tileValue" type="number" min="1" max="10000" step="1"></label>
+    </div>
+    <div class="row"><p class="hint" id="sizeHint"></p><button class="btn small" type="button" id="useSize">Use suggested size</button></div>
+    <div class="grid">
+      <label class="field">Your seat
+        <select id="seat"><option value="player">Play as Player 1</option><option value="spectator">Spectator (all bots)</option></select></label>
+      <label class="field">Bot skill
+        <select id="difficulty"><option value="easy">Easy</option><option value="normal">Normal</option><option value="hard">Hard</option></select></label>
+      <label class="field">Question limit (0 = play until one player is left)<input id="maxQ" type="number" min="0" max="200" step="1"></label>
+      <label class="field">Seed (blank = random)<input id="seed" type="text" maxlength="24" autocomplete="off"></label>
+    </div>
+    <p class="hint">The map usually fills within 5 to 13 questions. With no question limit, playing until one player is left typically takes 60 to 230 questions, so a limit of 30 to 50 suits a class lesson.</p>
+  </div>
+
+  <div class="card stack">
+    <h2>How a question works</h2>
+    <div class="note"><b>Claiming:</b> while free tiles remain, every correct answer claims one tile, fastest first. When the map is full, anyone with no land is out.</div>
+    <div class="note"><b>Battle:</b> correct answers rank first (fastest first), then everyone else. The top half of the active players each take one tile from the bottom half: 1st from last, 2nd from second last, and so on. With an odd number of players, the player in the middle neither gains nor loses. Only a correct answer can win a tile.</div>
+    <div class="note"><b>Winning:</b> the last player with land wins. If a question limit is set, the player with the most tiles wins when it is reached.</div>
+  </div>
+
+  <div id="errs" role="alert" aria-live="polite"></div>
+  <div class="row"><button class="btn primary" id="start" type="button">Start game</button></div>
+</section>
+
+<!-- GAME -->
+<section id="game" hidden>
+  <div class="strip"><span class="big" id="gTitle"></span><span class="clock" id="gClock"></span></div>
+  <div class="play" id="playArea">
+    <div class="card" id="mapCard"></div>
+    <div class="card stack" id="panel"></div>
+    <div class="card stack" id="board"></div>
+  </div>
+</section>
+
+<!-- FINAL -->
+<section id="final" class="stack" hidden></section>
+
+</div>
+
+<script>
+/*ENGINE_START*/
+const QUESTIONS = [
+  {q:'What is the capital of Uzbekistan?', a:['Tashkent','Samarkand','Bukhara','Khiva'], c:0},
+  {q:'Which city is famous for the Registan square?', a:['Samarkand','Tashkent','Andijan','Nukus'], c:0},
+  {q:'Which Central Asian sea has nearly disappeared?', a:['Aral Sea','Caspian Sea','Black Sea','Dead Sea'], c:0},
+  {q:'What is the capital of Kazakhstan?', a:['Astana','Almaty','Bishkek','Dushanbe'], c:0},
+  {q:'Which mountains cover much of Tajikistan?', a:['Pamir','Alps','Andes','Urals'], c:0},
+  {q:'Which lake is the largest in Kyrgyzstan?', a:['Issyk-Kul','Baikal','Balkhash','Sarez'], c:0},
+  {q:'Which ruler made Samarkand his capital in the 14th century?', a:['Amir Timur','Genghis Khan','Babur','Ulugh Beg'], c:0},
+  {q:'The Silk Road linked China with…', a:['The Mediterranean','Australia','Brazil','Canada'], c:0},
+  {q:'7 × 8 = ?', a:['56','54','48','64'], c:0},
+  {q:'What is the square root of 144?', a:['12','14','11','16'], c:0},
+  {q:'Which planet is called the Red Planet?', a:['Mars','Venus','Jupiter','Mercury'], c:0},
+  {q:'What is the chemical formula of water?', a:['H₂O','CO₂','O₂','NaCl'], c:0}
+];
+const NAMES = ['Aziza','Timur','Dilnoza','Bekzod','Madina','Jasur','Zarina','Rustam','Nodira','Sardor','Malika','Otabek','Gulnora','Farrukh','Kamola','Sherzod','Laylo','Ulugbek','Aibek','Aigerim','Nurlan','Dana','Askar','Zhanar','Bolat','Aliya','Emir','Meerim','Tilek','Aida','Daniyar','Saltanat'];
+const DIFF = {easy:{acc:.55,t:9}, normal:{acc:.75,t:6.5}, hard:{acc:.9,t:4.5}};
+// about 4 tiles per player, never smaller than 5 x 5
+const suggestSize = p => Math.min(20, Math.max(5, Math.ceil(Math.sqrt(4*p))));
+const DEFAULTS = {players:6, size:5, qTime:15, tileValue:50, seat:'player', difficulty:'normal', maxQ:40, seed:''};
+
+const clone=o=>JSON.parse(JSON.stringify(o));
+const r3=x=>Math.round(x*1000)/1000;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+function mulberry32(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shuffle(a,R){for(let i=a.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function gauss(R){let u=0,v=0;while(!u)u=R();while(!v)v=R();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+
+function validate(S){
+  const e=[], int=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
+  const okP=int(S.players,3,30), okS=int(S.size,3,20);
+  if(!okP) e.push('Players must be a whole number from 3 to 30.');
+  if(!okS) e.push('Map size must be a whole number from 3 to 20.');
+  if(okP&&okS&&S.size*S.size<S.players) e.push(`A ${S.size}×${S.size} map has ${S.size*S.size} tiles, fewer than ${S.players} players. Use a bigger map or fewer players.`);
+  if(!int(S.qTime,5,60)) e.push('Seconds per question must be a whole number from 5 to 60.');
+  if(!int(S.tileValue,1,10000)) e.push('Points per tile must be a whole number from 1 to 10000.');
+  if(!int(S.maxQ,0,200)) e.push('Question limit must be a whole number from 0 to 200.');
+  if(!DIFF[S.difficulty]) e.push('Choose a bot skill.');
+  return e;
+}
+
+/* ---------- hex grid (odd-r offset: odd rows sit half a tile to the right) ---------- */
+function nbrs(n,i){
+  const r=Math.floor(i/n), c=i%n, out=[];
+  const add=(rr,cc)=>{ if(rr>=0&&rr<n&&cc>=0&&cc<n) out.push(rr*n+cc); };
+  add(r,c-1); add(r,c+1);
+  if(r%2===0){ add(r-1,c-1); add(r-1,c); add(r+1,c-1); add(r+1,c); }
+  else       { add(r-1,c);   add(r-1,c+1); add(r+1,c); add(r+1,c+1); }
+  return out;
+}
+
+/* ---------- game ---------- */
+function createGame(S,seed){
+  const R=mulberry32(seed>>>0), n=S.size, p=S.players, base=DIFF[S.difficulty];
+  const names=shuffle(NAMES.slice(),R), humanId=S.seat==='spectator'?-1:0, scale=Math.min(1.5,S.qTime/15);
+  const players=[];
+  for(let i=0;i<p;i++){
+    const z=gauss(R);
+    players.push({id:i,name:i===humanId?'You':names[i],human:i===humanId,
+      acc:clamp(base.acc+.09*z,.2,.97), tm:clamp(base.t*scale*Math.exp(-.18*z),.9,S.qTime*.8),
+      tiles:0,correct:0,asked:0,timeSum:0,out:false,outAt:0,tie:R()});
+  }
+  const nb=[]; for(let i=0;i<n*n;i++) nb.push(nbrs(n,i));
+  return {S:clone(S),R,n,nb,owner:Array(n*n).fill(-1),neutral:n*n,players,humanId,q:0,phase:'claim',over:false,reason:'',winners:[],bag:[],cur:null,last:null,changed:new Set()};
+}
+const active=G=>G.players.filter(p=>!p.out);
+function botAnswer(G,p){
+  const R=G.R, q=G.S.qTime; let t=Math.max(.8,p.tm*Math.exp(.35*gauss(R))), c=R()<p.acc;
+  if(t>=q){ t=q; c=false; }
+  return {c,t:r3(t)};
+}
+function drawQ(G){ if(!G.bag.length) G.bag=shuffle(QUESTIONS.map((_,i)=>i),G.R); return G.bag.pop(); }
+function setOwner(G,t,pid){
+  const old=G.owner[t];
+  if(old>=0) G.players[old].tiles--; else G.neutral--;
+  G.owner[t]=pid; G.players[pid].tiles++; G.changed.add(t);
+}
+function pickNeutral(G,pid){
+  const all=[], adj=[];
+  for(let i=0;i<G.owner.length;i++) if(G.owner[i]<0){ all.push(i); if(G.nb[i].some(j=>G.owner[j]===pid)) adj.push(i); }
+  const pool=adj.length?adj:all; return pool[Math.floor(G.R()*pool.length)];
+}
+function pickTransfer(G,from,to){
+  const mine=[]; for(let i=0;i<G.owner.length;i++) if(G.owner[i]===from) mine.push(i);
+  const touching=mine.filter(i=>G.nb[i].some(j=>G.owner[j]===to));
+  if(touching.length) return touching[Math.floor(G.R()*touching.length)];
+  // otherwise give up the most exposed tile (fewest friendly neighbours)
+  let best=[],bs=99;
+  for(const i of mine){ const s=G.nb[i].filter(j=>G.owner[j]===from).length; if(s<bs){bs=s;best=[i];} else if(s===bs) best.push(i); }
+  return best[Math.floor(G.R()*best.length)];
+}
+function beginQuestion(G){
+  G.q++; G.changed=new Set();
+  const act=active(G), cur={q:G.q,qi:drawQ(G),act:act.map(p=>p.id),ans:{},resolved:false};
+  for(const p of act) if(!p.human) cur.ans[p.id]=botAnswer(G,p);
+  G.cur=cur; return cur;
+}
+const humanPending=G=>!!(G.cur&&!G.cur.resolved&&G.humanId>=0&&G.cur.act.includes(G.humanId)&&!(G.humanId in G.cur.ans));
+function answerHuman(G,res){ G.cur.ans[G.humanId]=res; }
+function knockOut(G,rows){
+  for(const p of G.players) if(!p.out&&p.tiles===0){ p.out=true; p.outAt=G.q; const r=rows.find(x=>x.p===p); if(r) r.out=true; }
+}
+function resolveQuestion(G){
+  const cur=G.cur, S=G.S;
+  const rows=cur.act.map(id=>{ const p=G.players[id], a=cur.ans[id]; return {p,c:a.c,t:a.t,before:p.correct,rnd:G.R(),change:0,out:false,rank:0}; });
+  // correct answers first (fastest first); everyone else ties and is ordered by earlier correct answers, then luck
+  rows.sort((x,y)=> x.c!==y.c ? (x.c?-1:1) : (x.c ? (x.t-y.t) : 0) || (y.before-x.before) || (x.rnd-y.rnd));
+  rows.forEach((r,i)=>r.rank=i+1);
+  for(const r of rows){ r.p.asked++; if(r.c){ r.p.correct++; r.p.timeSum=r3(r.p.timeSum+r.t); } }
+  const phaseBefore=G.neutral>0?'claim':'battle';
+  if(phaseBefore==='claim'){
+    for(const r of rows){ if(!r.c||G.neutral===0) continue; setOwner(G,pickNeutral(G,r.p.id),r.p.id); r.change=1; }
+    if(G.neutral===0){ G.phase='battle'; knockOut(G,rows); }
+  } else {
+    const n=rows.length, h=Math.floor(n/2);
+    for(let i=0;i<h;i++){
+      const w=rows[i]; if(!w.c) break;                    // only a correct answer can win a tile
+      const l=rows[n-1-i];
+      setOwner(G,pickTransfer(G,l.p.id,w.p.id),w.p.id); w.change=1; l.change=-1;
+    }
+    knockOut(G,rows);
+  }
+  cur.resolved=true;
+  const res={q:G.q,phase:phaseBefore,rows};
+  const act=active(G);
+  if(act.length<=1){ G.over=true; G.reason='last'; G.winners=act.slice(); }
+  else if(S.maxQ>0&&G.q>=S.maxQ){
+    G.over=true; G.reason='limit';
+    const top=act.slice().sort((a,b)=>b.tiles-a.tiles||b.correct-a.correct);
+    G.winners=top.filter(p=>p.tiles===top[0].tiles&&p.correct===top[0].correct);
+  }
+  G.last=res; return res;
+}
+// final order: survivors by tiles, then players who were knocked out later rank higher
+function placements(G){
+  return G.players.slice().sort((a,b)=> (a.out-b.out) || (a.out?(b.outAt-a.outAt):0) || (b.tiles-a.tiles) || (b.correct-a.correct) || (a.tie-b.tie));
+}
+function simulate(S,seed){
+  const G=createGame(S,seed); let guard=0;
+  while(!G.over&&guard++<500){
+    beginQuestion(G);
+    if(humanPending(G)) answerHuman(G,botAnswer(G,G.players[G.humanId]));
+    resolveQuestion(G);
+  }
+  return G;
+}
+/*ENGINE_END*/
+
+/* ================= UI ================= */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ft=s=>s.toFixed(1)+'s';
+const hue=i=>Math.round((i*137.508)%360);
+const pcls=i=>i%2?'pb':'pa';
+let S=null,G=null,UI={phase:'setup'},timerH=null,sizeTouched=false;
+
+const FIELDS={players:'n',size:'n',qTime:'n',tileValue:'n',seat:'s',difficulty:'s',maxQ:'n',seed:'s'};
+function readS(){ const v={}; for(const k in FIELDS){ const el=$(k); v[k]=FIELDS[k]==='n'?(el.value.trim()===''?NaN:Number(el.value)):el.value.trim(); } return v; }
+function writeS(s){ for(const k in FIELDS) $(k).value=s[k]; syncSize(); }
+function syncSize(){
+  const p=Number($('players').value), z=Number($('size').value);
+  if(!(Number.isInteger(p)&&p>=3&&p<=30)){ $('sizeHint').textContent=''; return; }
+  const sg=suggestSize(p);
+  let t=`Suggested for ${p} players: ${sg}×${sg} (${sg*sg} tiles, about ${(sg*sg/p).toFixed(1)} each).`;
+  if(Number.isInteger(z)&&z*z<2*p) t+=` With ${z}×${z} some players will be out the moment the map fills.`;
+  $('sizeHint').textContent=t; $('useSize').hidden=(z===sg);
+}
+$('players').addEventListener('input',()=>{ if(!sizeTouched){ const p=Number($('players').value); if(Number.isInteger(p)&&p>=3&&p<=30) $('size').value=suggestSize(p); } syncSize(); });
+$('size').addEventListener('input',()=>{ sizeTouched=true; syncSize(); });
+$('useSize').onclick=()=>{ const p=Number($('players').value); if(Number.isInteger(p)&&p>=3&&p<=30){ $('size').value=suggestSize(p); sizeTouched=false; syncSize(); } };
+function saveS(s){ try{ localStorage.setItem('landRushSettings',JSON.stringify(s)); }catch(e){} }
+function loadS(){ try{ const j=localStorage.getItem('landRushSettings'); if(j){ const s=JSON.parse(j); if(s&&s.players&&s.size) return s; } }catch(e){} return null; }
+function hashSeed(str){ let h=1779033703^str.length; for(let i=0;i<str.length;i++){ h=Math.imul(h^str.charCodeAt(i),3432918353); h=h<<13|h>>>19; } return (h>>>0)||1; }
+function showErrs(e){ $('errs').innerHTML=e.map(x=>`<div>${esc(x)}</div>`).join(''); }
+
+$('start').onclick=()=>{
+  const s=readS(), e=validate(s); showErrs(e); if(e.length){ $('errs').scrollIntoView({block:'center'}); return; }
+  saveS(s); startGame(s);
+};
+function startGame(s){
+  S=s; const seed=S.seed?hashSeed(S.seed):Math.floor(Math.random()*4294967295)+1;
+  G=createGame(S,seed); UI={phase:'idle'};
+  $('setup').hidden=true; $('final').hidden=true; $('game').hidden=false; scrollTo(0,0);
+  next();
+}
+function next(){
+  stopTimer();
+  if(G.over){ return showFinal(); }
+  beginQuestion(G);
+  if(humanPending(G)) openQuestion();
+  else { resolveQuestion(G); UI.phase='reveal'; render(); }
+}
+
+/* ---------- views ---------- */
+const me=()=>G.humanId>=0?G.players[G.humanId]:null;
+function ansText(r){ return r.c?`correct ${ft(r.t)}`:(r.t>=G.S.qTime-1e-9?'no answer':'wrong'); }
+function mapHTML(){
+  const n=G.n, s=20, w=Math.sqrt(3)*s, W=w*(n+.5), H=s*(1.5*(n-1)+2), labels=n<=14;
+  let h='';
+  for(let i=0;i<n*n;i++){
+    const r=Math.floor(i/n), c=i%n, cx=w*(c+(r%2?.5:0))+w/2, cy=1.5*s*r+s, o=G.owner[i];
+    const pts=[0,1,2,3,4,5].map(k=>{ const a=(60*k-30)*Math.PI/180; return (cx+s*Math.cos(a)).toFixed(1)+','+(cy+s*Math.sin(a)).toFixed(1); }).join(' ');
+    const cls='hx '+(o<0?'n':pcls(o))+(o===G.humanId&&o>=0?' mine':'')+(G.changed.has(i)?' hi':'');
+    h+=`<polygon class="${cls}" ${o>=0?`style="--h:${hue(o)}"`:''} points="${pts}"/>`;
+    if(labels&&o>=0) h+=`<text class="tl" x="${cx.toFixed(1)}" y="${cy.toFixed(1)}">${o+1}</text>`;
+  }
+  return `<div class="mapbox"><svg viewBox="0 0 ${W.toFixed(1)} ${H.toFixed(1)}" role="img" aria-label="Hexagon map, ${G.neutral} free tiles">${h}</svg></div>
+  <div class="legend"><span><i style="background:var(--neutral)"></i>Free tile</span><span><i style="background:transparent;border:2px solid var(--hi)"></i>Changed this question</span>${G.humanId>=0?`<span><i style="background:transparent;border:2px solid var(--fg)"></i>Your land (Player 1)</span>`:''}</div>`;
+}
+function boardHTML(){
+  const act=active(G).sort((a,b)=>b.tiles-a.tiles||b.correct-a.correct||a.tie-b.tie);
+  const out=G.players.filter(p=>p.out).sort((a,b)=>b.outAt-a.outAt);
+  const row=p=>`<tr class="${p.human?'you':''} ${p.out?'out':''}"><td class="l"><span class="sw ${pcls(p.id)}" style="--h:${hue(p.id)}">${p.id+1}</span></td><td class="l">${esc(p.name)}</td><td>${p.out?`out Q${p.outAt}`:p.tiles}</td><td class="hide-s">${p.tiles*G.S.tileValue}</td><td>${p.correct}/${p.asked}</td></tr>`;
+  return `<h3>Standings</h3><div class="tw"><table><thead><tr><th class="l"></th><th class="l">Player</th><th>Tiles</th><th class="hide-s">Points</th><th>Correct</th></tr></thead><tbody>${act.map(row).join('')}${out.map(row).join('')}</tbody></table></div>`;
+}
+function headTitle(){ return `Question ${Math.max(1,G.q)}${G.S.maxQ?` of ${G.S.maxQ}`:''}`; }
+function headClock(){ return G.neutral>0?`Claiming land · ${G.neutral} free tile${G.neutral===1?'':'s'}`:`Battle · ${active(G).length} players left`; }
+function resultsHTML(res){
+  const rows=res.rows.map(r=>{
+    const ch=r.out?'Out':r.change>0?'+1 tile':r.change<0?'−1 tile':'–';
+    return `<tr class="${r.p.human?'you':''}"><td>${r.rank}</td><td class="l">${esc(r.p.name)}</td><td>${ansText(r)}</td><td class="${r.change>0?'up':r.change<0||r.out?'dn':''}">${ch}</td></tr>`;
+  }).join('');
+  return `<div class="tw"><table><thead><tr><th>#</th><th class="l">Player</th><th>Answer</th><th>Change</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function myLine(res){
+  const r=res.rows.find(x=>x.p.human);
+  if(!r){ return me()&&me().out?`<div class="note"><b>You are out.</b> You have no land left. The game continues without you.</div>`:''; }
+  const a=r.c?`You answered correctly in ${ft(r.t)} and ranked <b>${r.rank} of ${res.rows.length}</b>.`:(r.t>=G.S.qTime-1e-9?'You did not answer in time.':'You answered wrong.');
+  let b=r.change>0?'You gained a tile.':r.change<0?'You lost a tile.':(res.phase==='battle'&&res.rows.length%2===1&&r.rank===(res.rows.length+1)/2?'You are in the middle, so your land did not change.':'Your land did not change.');
+  if(r.out) b+=' You have no land left, so you are out.';
+  return `<div class="note">${a} ${b}</div>`;
+}
+function render(){
+  $('gTitle').textContent=headTitle(); $('gClock').textContent=headClock();
+  $('mapCard').innerHTML=mapHTML(); $('board').innerHTML=boardHTML();
+  const pn=$('panel');
+  if(UI.phase==='question') pn.innerHTML=viewQuestion();
+  else {
+    const res=G.last;
+    const btn=G.over?'<button class="btn primary" type="button" data-act="final">See final results</button>':'<button class="btn primary" type="button" data-act="next">Next question</button>';
+    const phaseNote=res.phase==='claim'?'Claiming: each correct answer takes a free tile, fastest first.':'Battle: the top half take a tile from the bottom half.';
+    pn.innerHTML=`<h3>Question ${res.q} results</h3><p class="hint">${phaseNote}</p>${myLine(res)}${resultsHTML(res)}<div class="row">${btn}</div>`;
+  }
+  if(UI.phase==='question') startTimer();
+}
+function viewQuestion(){
+  const q=UI.q, done=q.done;
+  const opts=q.opts.map((o,k)=>`<button class="btn ${done?(o.i===q.c?'ok':(k===q.pick?'bad':'')):''}" type="button" data-act="ans" data-k="${k}" ${done?'disabled':''}>${k+1}. ${esc(o.t)}</button>`).join('');
+  return `<h3>Question ${G.q}</h3><div class="qtext">${esc(q.text)}</div><div class="tbar"><i id="tbar"></i></div><div class="opts">${opts}</div>`;
+}
+function showFinal(){
+  UI.phase='final'; $('game').hidden=true; $('final').hidden=false; scrollTo(0,0);
+  const pl=placements(G), win=G.winners;
+  const champ=win.length>1?`Shared win: ${win.map(p=>esc(p.name)).join(', ')}`:(win[0].human?'You win':`${esc(win[0].name)} wins`);
+  const why=G.reason==='last'?'Only one player has land left.':`The ${G.S.maxQ}-question limit was reached, so the player with the most tiles wins.`;
+  const stand=pl.map((p,i)=>{
+    const st=win.includes(p)?'Winner':(p.out?`Out in question ${p.outAt}`:'Survived');
+    return `<tr class="${p.human?'you':''}"><td>${i+1}</td><td class="l"><span class="sw ${pcls(p.id)}" style="--h:${hue(p.id)}">${p.id+1}</span> ${esc(p.name)}</td><td class="l">${st}</td><td>${p.tiles}</td><td>${p.tiles*G.S.tileValue}</td></tr>`;
+  }).join('');
+  const rep=G.players.slice().sort((a,b)=>(b.asked?b.correct/b.asked:0)-(a.asked?a.correct/a.asked:0)||b.correct-a.correct||b.asked-a.asked).map(p=>{
+    const acc=p.asked?Math.round(100*p.correct/p.asked):0, cls=acc>=70?'':acc>=40?'mid':'low';
+    const avg=p.correct?ft(p.timeSum/p.correct):'–';
+    return `<tr class="${p.human?'you':''}"><td class="l"><span class="sw ${pcls(p.id)}" style="--h:${hue(p.id)}">${p.id+1}</span> ${esc(p.name)}</td><td>${p.correct}</td><td>${p.asked}</td><td>${acc}% <span class="bar2 ${cls}" style="width:${Math.max(2,acc*.5)}px"></span></td><td class="hide-s">${avg}</td></tr>`;
+  }).join('');
+  $('final').innerHTML=`<div class="card stack"><div class="champ">${champ}</div><p class="muted">${why} ${G.q} question${G.q===1?'':'s'} were asked.</p></div>
+  <div class="card">${mapHTML()}</div>
+  <div class="card stack"><h3>Final standings</h3><div class="tw"><table><thead><tr><th>#</th><th class="l">Player</th><th class="l">Result</th><th>Tiles</th><th>Points</th></tr></thead><tbody>${stand}</tbody></table></div></div>
+  <div class="card stack"><h3>Homework report</h3><p class="hint">Correct answers out of the questions each player was asked. Players who were knocked out were asked fewer questions. Sorted by accuracy.</p>
+  <div class="tw"><table><thead><tr><th class="l">Player</th><th>Correct</th><th>Asked</th><th>Accuracy</th><th class="hide-s">Avg time</th></tr></thead><tbody>${rep}</tbody></table></div></div>
+  <div class="row"><button class="btn primary" type="button" data-act="again">Play again</button><button class="btn" type="button" data-act="setup">Change settings</button></div>`;
+}
+
+/* ---------- question phase ---------- */
+function openQuestion(){
+  const src=QUESTIONS[G.cur.qi];
+  UI.q={text:src.q,opts:shuffle(src.a.map((t,i)=>({t,i})),Math.random),c:src.c,start:performance.now(),done:false,pick:-1};
+  UI.phase='question'; render();
+}
+function submitAnswer(k){
+  const q=UI.q; if(!q||q.done) return;
+  const secs=Math.min(G.S.qTime,(performance.now()-q.start)/1000), timeout=k<0||secs>=G.S.qTime;
+  const res=timeout?{c:false,t:G.S.qTime}:{c:q.opts[k].i===q.c,t:r3(Math.max(.05,secs))};
+  q.done=true; q.pick=k; stopTimer();
+  answerHuman(G,res); resolveQuestion(G);
+  // briefly show the correct option, then the results
+  UI.phase='question'; $('panel').innerHTML=viewQuestion();
+  setTimeout(()=>{ UI.phase='reveal'; render(); },timeout?200:900);
+}
+function startTimer(){
+  stopTimer();
+  timerH=setInterval(()=>{
+    const q=UI.q; if(!q||q.done||UI.phase!=='question') return stopTimer();
+    const left=G.S.qTime-(performance.now()-q.start)/1000, bar=$('tbar');
+    if(bar) bar.style.width=Math.max(0,left/G.S.qTime*100)+'%';
+    if(left<=0) submitAnswer(-1);
+  },100);
+}
+function stopTimer(){ if(timerH){ clearInterval(timerH); timerH=null; } }
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]'); if(!b||!G) return; const a=b.dataset.act;
+  if(a==='ans') submitAnswer(Number(b.dataset.k));
+  else if(a==='next') next();
+  else if(a==='final') showFinal();
+  else if(a==='again'){ const s=clone(S); s.seed=''; startGame(s); }
+  else if(a==='setup'){ stopTimer(); $('game').hidden=true; $('final').hidden=true; $('setup').hidden=false; scrollTo(0,0); }
+});
+document.addEventListener('keydown',e=>{
+  if(!G||UI.phase!=='question'||!UI.q||UI.q.done) return;
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+  const k='1234'.indexOf(e.key); if(k>=0&&k<UI.q.opts.length) submitAnswer(k);
+});
+
+{ const saved=loadS(); const s=saved||clone(DEFAULTS); sizeTouched=!!saved&&saved.size!==suggestSize(saved.players); writeS(s); }
+</script>
+</body>
+</html>

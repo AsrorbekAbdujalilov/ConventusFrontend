@@ -6,7 +6,10 @@ import { HomePage } from './pages/HomePage'
 import { AuthPage } from './pages/AuthPage'
 import { ArenaPage } from './pages/ArenaPage'
 import { ArenaLivePage } from './pages/ArenaLivePage'
+import { GameTypeSelectPage } from './pages/GameTypeSelectPage'
+import { GameSettingsPage } from './pages/GameSettingsPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { ClassroomsPage } from './pages/ClassroomsPage'
 import './App.css'
 
 function Layout() {
@@ -36,8 +39,17 @@ function Layout() {
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/authentication" element={<AuthPage />} />
           <Route path="/arena" element={<ArenaPage />} />
+          <Route path="/arena/live/:code/choose-mode" element={<GameTypeSelectPage />} />
+          <Route path="/arena/live/:code/settings/:mode" element={<GameSettingsPage />} />
+          <Route path="/arena/live/:code/select-mode" element={<GameTypeSelectPage />} />
           <Route path="/arena/live/:code" element={<ArenaLivePage />} />
           <Route path="/arena/live" element={<ArenaLivePage />} />
+          <Route path="/classrooms" element={<ClassroomsPage />} />
+          <Route path="/classrooms/create" element={<ClassroomsPage initialTab="create" />} />
+          <Route path="/classrooms/join" element={<ClassroomsPage initialTab="join" />} />
+          <Route path="/classrooms/:id" element={<ClassroomsPage initialTab="overview" />} />
+          <Route path="/classrooms/:id/tasks" element={<ClassroomsPage initialTab="tasks" />} />
+          <Route path="/classrooms/:id/messages" element={<ClassroomsPage initialTab="messages" />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/login" element={<AuthPage />} />
           <Route path="/register" element={<AuthPage />} />
