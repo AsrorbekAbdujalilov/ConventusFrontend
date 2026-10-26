@@ -63,9 +63,9 @@ export const NAV_ITEMS = [
     key: 'focus',
     title: 'Focus',
     items: [
-      { title: 'Focus', desc: 'Pomodoro timer with your task list', href: '/' },
-      { title: 'Deep Focus', desc: 'Full-screen, nothing else on the page', href: '/' },
-      { title: 'Ambient sounds', desc: 'Rain, cafe and white noise', href: '/' },
+      { title: 'Focus timer', desc: 'Pomodoro timer and stopwatch for study sessions', href: '/focus' },
+      { title: 'Deep Focus', desc: 'A calm workspace for your next study session', href: '/focus' },
+      { title: 'Study music', desc: 'Gentle, locally generated focus music', href: '/focus' },
     ],
   },
 ]

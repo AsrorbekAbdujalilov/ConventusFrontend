@@ -1,0 +1,445 @@
+.focus-page {
+  flex: 1;
+  width: 100%;
+  padding: clamp(2.5rem, 6vw, 5rem) 1rem 3.5rem;
+  background:
+    radial-gradient(ellipse at 14% 12%, color-mix(in srgb, var(--primary-soft) 72%, transparent), transparent 34rem),
+    var(--bg);
+}
+
+.focus-wrap {
+  max-width: 70rem;
+  margin-inline: auto;
+}
+
+.focus-heading {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.focus-eyebrow,
+.focus-card-kicker {
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.14em;
+}
+
+.focus-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.focus-live-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 0 0.25rem var(--ok-soft);
+}
+
+.focus-heading h1 {
+  margin-top: 0.45rem;
+  font-size: clamp(2.25rem, 5vw, 3.35rem);
+  letter-spacing: -0.045em;
+}
+
+.focus-heading p {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: 1.02rem;
+}
+
+.focus-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(19rem, 0.8fr);
+  align-items: start;
+  gap: 1.15rem;
+}
+
+.focus-clock-card,
+.focus-music-card,
+.focus-note-card {
+  border: 1px solid var(--border);
+  border-radius: 1.5rem;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.focus-clock-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(1.1rem, 4vw, 2rem);
+}
+
+.focus-mode-switch {
+  display: flex;
+  width: min(100%, 21rem);
+  padding: 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.focus-mode-switch button {
+  flex: 1;
+  min-height: 2.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.87rem;
+  font-weight: 650;
+}
+
+.focus-mode-switch button.is-selected {
+  background: var(--card);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+}
+
+.focus-presets {
+  display: flex;
+  gap: 0.45rem;
+  margin-top: 1rem;
+}
+
+.focus-presets button {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.focus-presets button.is-selected {
+  border-color: var(--primary-soft);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.focus-presets button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.focus-clock {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, 19rem);
+  aspect-ratio: 1;
+  margin: 1.2rem 0 0.55rem;
+}
+
+.focus-progress {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.focus-progress circle {
+  fill: none;
+  stroke-width: 5;
+}
+
+.focus-progress-track {
+  stroke: var(--surface);
+}
+
+.focus-progress-value {
+  stroke: var(--primary);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.35s ease;
+}
+
+.focus-clock.is-running .focus-progress-value {
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--primary) 48%, transparent));
+}
+
+.focus-clock-content {
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  text-align: center;
+}
+
+.focus-clock-label {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.focus-clock-content strong {
+  font-family: var(--f-mono);
+  font-size: clamp(3.2rem, 10vw, 4.45rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.075em;
+  font-variant-numeric: tabular-nums;
+}
+
+.focus-clock-caption {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.focus-clock-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.focus-start-button {
+  min-width: 11rem;
+  min-height: 2.9rem;
+  border-radius: 999px;
+}
+
+.focus-reset-button {
+  width: 2.9rem;
+  height: 2.9rem;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.3rem;
+}
+
+.focus-task-field {
+  display: grid;
+  gap: 0.4rem;
+  width: min(100%, 24rem);
+  margin-top: 1.35rem;
+}
+
+.focus-task-field span,
+.focus-volume > span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.focus-task-field input {
+  min-height: 2.7rem;
+  border-radius: 0.85rem;
+  background: var(--surface);
+  font-size: 0.86rem;
+}
+
+.focus-side-column {
+  display: grid;
+  gap: 1rem;
+}
+
+.focus-music-card {
+  padding: 1.35rem;
+}
+
+.focus-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.focus-music-icon {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.9rem;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 1.4rem;
+}
+
+.focus-card-heading h2 {
+  margin-top: 0.1rem;
+  font-size: 1.3rem;
+}
+
+.focus-card-kicker {
+  font-size: 0.62rem;
+}
+
+.focus-card-description {
+  margin: 0.9rem 0 1rem;
+  color: var(--muted);
+  font-size: 0.83rem;
+}
+
+.focus-track-list {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.focus-track {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 3.7rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid transparent;
+  border-radius: 0.95rem;
+  background: transparent;
+  text-align: left;
+}
+
+.focus-track:hover,
+.focus-track.is-selected {
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+.focus-track-symbol {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 auto;
+  border-radius: 0.7rem;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 1.1rem;
+}
+
+.focus-track-copy {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 0.06rem;
+}
+
+.focus-track-copy strong {
+  font-size: 0.84rem;
+  font-weight: 650;
+}
+
+.focus-track-copy small {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.focus-playing-label {
+  color: var(--primary);
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.focus-music-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.focus-music-play {
+  display: grid;
+  place-items: center;
+  width: 2.55rem;
+  height: 2.55rem;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-size: 0.9rem;
+}
+
+.focus-volume {
+  display: grid;
+  flex: 1;
+  gap: 0.15rem;
+}
+
+.focus-volume input {
+  width: 100%;
+  accent-color: var(--primary);
+}
+
+.focus-volume-value {
+  min-width: 2.4rem;
+  color: var(--muted);
+  font-family: var(--f-mono);
+  font-size: 0.7rem;
+  text-align: right;
+}
+
+.focus-music-error {
+  margin: 0.75rem 0 0;
+  color: var(--danger);
+  font-size: 0.8rem;
+}
+
+.focus-note-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 1.2rem 1.3rem;
+  background: var(--primary-soft);
+  box-shadow: none;
+}
+
+.focus-note-sparkle {
+  color: var(--primary);
+  font-size: 1.35rem;
+  line-height: 1.3;
+}
+
+.focus-note-card h2 {
+  font-size: 1rem;
+}
+
+.focus-note-card p {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.focus-footer-note {
+  margin: 1.4rem 0 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .focus-layout {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 34rem;
+    margin-inline: auto;
+  }
+
+  .focus-side-column {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 420px) {
+  .focus-page {
+    padding-inline: 0.75rem;
+  }
+
+  .focus-clock-card {
+    padding-inline: 0.9rem;
+  }
+
+  .focus-music-card {
+    padding: 1.1rem;
+  }
+}

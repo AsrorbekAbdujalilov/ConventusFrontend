@@ -10,7 +10,9 @@ import { GameTypeSelectPage } from './pages/GameTypeSelectPage'
 import { GameSettingsPage } from './pages/GameSettingsPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { ClassroomsPage } from './pages/ClassroomsPage'
+import { FocusPage } from './pages/FocusPage'
 import './App.css'
+import './styles/classrooms.css'
 
 function Layout() {
   const navigate = useNavigate()
@@ -50,6 +52,7 @@ function Layout() {
           <Route path="/classrooms/:id" element={<ClassroomsPage initialTab="overview" />} />
           <Route path="/classrooms/:id/tasks" element={<ClassroomsPage initialTab="tasks" />} />
           <Route path="/classrooms/:id/messages" element={<ClassroomsPage initialTab="messages" />} />
+          <Route path="/focus" element={<FocusPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/login" element={<AuthPage />} />
           <Route path="/register" element={<AuthPage />} />

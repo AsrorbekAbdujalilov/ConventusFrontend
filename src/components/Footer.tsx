@@ -79,8 +79,8 @@ export function Footer() {
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
               <li><a href="/" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Subject Practice Tests</a></li>
               <li><a href="/" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Exam Study Planner</a></li>
-              <li><a href="/" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Deep Focus &amp; Pomodoro</a></li>
-              <li><a href="/" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Ambient Study Sounds</a></li>
+              <li><a href="/focus" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Deep Focus &amp; Pomodoro</a></li>
+              <li><a href="/focus" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Study Music</a></li>
             </ul>
           </div>
 

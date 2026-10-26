@@ -56,9 +56,6 @@ export function ClassroomsPage({ initialTab = 'overview' }: ClassroomsPageProps)
       setLoading(true)
       const data = await classroomsApi.listClassrooms()
       setClassrooms(data)
-      if (!routeId && data.length > 0 && pageTab !== 'create' && pageTab !== 'join') {
-        navigate(`/classrooms/${data[0].id}`)
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load classrooms.')
     } finally {
@@ -208,122 +205,184 @@ export function ClassroomsPage({ initialTab = 'overview' }: ClassroomsPageProps)
     )
   }
 
+  const renderClassroomHeader = (activeTab: 'stream' | 'classwork') => {
+    if (!selectedClassroom) return null
+
+    return (
+      <>
+        <header className="classroom-course-banner">
+          <div>
+            <span>{selectedClassroom.teacher?.username || 'Classroom'}</span>
+            <h1>{selectedClassroom.name}</h1>
+            <p>{selectedClassroom.description || 'Welcome to your classroom.'}</p>
+          </div>
+          <span className="classroom-course-code">Class ID&nbsp; {selectedClassroom.join_code}</span>
+        </header>
+        <nav className="classroom-tabs" aria-label="Classroom sections">
+          <Link
+            to={`/classrooms/${selectedClassroom.id}`}
+            className={activeTab === 'stream' ? 'active' : ''}
+          >
+            Stream
+          </Link>
+          <Link
+            to={`/classrooms/${selectedClassroom.id}/tasks`}
+            className={activeTab === 'classwork' ? 'active' : ''}
+          >
+            Classwork
+          </Link>
+        </nav>
+      </>
+    )
+  }
+
   const renderOverviewPage = () => (
     <div className="wrap classroom-page">
-      <section className="classroom-hero panel">
-        <div>
-          <span className="eyebrow">Conventus classrooms</span>
-          <h1>Study rooms for teachers and students</h1>
-          <p>Use a classroom code to join, then move to assignments and messages in separate pages.</p>
-        </div>
-        <div className="badge-row">
-          <span className="badge soft">{isTeacher ? 'Teacher view' : 'Student view'}</span>
-          <span className="badge neutral">{classrooms.length} room{classrooms.length === 1 ? '' : 's'}</span>
-        </div>
-      </section>
-
       {error && <div className="alert error">{error}</div>}
       {info && <div className="alert success">{info}</div>}
 
-      <div className="classroom-grid">
-        <aside className="panel classroom-sidebar">
-          <div className="section-header">
-            <h3>My classrooms</h3>
-          </div>
-
-          <div className="button-row stacked">
-            {isTeacher && (
-              <Link to="/classrooms/create" className="btn primary full">Create classroom</Link>
-            )}
-            <Link to="/classrooms/join" className="btn line full">Join with code</Link>
-          </div>
-
-          {loading ? <div className="muted">Loading classrooms…</div> : (
-            <div className="room-list">
-              {classrooms.length === 0 ? (
-                <div className="empty-state">No classrooms yet. Create one or join with a classroom code.</div>
-              ) : (
-                classrooms.map((room) => (
-                  <Link
-                    key={room.id}
-                    to={`/classrooms/${room.id}`}
-                    className={`room-card ${routeId === room.id ? 'selected' : ''}`}
-                  >
-                    <div className="room-topline">
-                      <strong>{room.name}</strong>
-                      <span>#{room.id}</span>
+      {!selectedClassroom ? (
+        <>
+          <header className="classroom-dashboard-heading">
+            <div>
+              <span className="eyebrow">Conventus classrooms</span>
+              <h1>Your classes</h1>
+            </div>
+            <div className="button-row">
+              {isTeacher && <Link to="/classrooms/create" className="btn primary">Create class</Link>}
+              <Link to="/classrooms/join" className="btn line">Join a class</Link>
+            </div>
+          </header>
+          {loading ? <div className="empty-state">Loading your classes…</div> : classrooms.length === 0 ? (
+            <div className="classroom-empty panel">
+              <h2>Your classroom is just getting started</h2>
+              <p>Create a class or join one with the code from your teacher.</p>
+              <div className="button-row">
+                {isTeacher && <Link to="/classrooms/create" className="btn primary">Create class</Link>}
+                <Link to="/classrooms/join" className="btn line">Join a class</Link>
+              </div>
+            </div>
+          ) : (
+            <div className="classroom-course-grid">
+              {classrooms.map((room) => (
+                <Link key={room.id} to={`/classrooms/${room.id}`} className="classroom-course-card">
+                  <div className="classroom-card-banner">
+                    <h2>{room.name}</h2>
+                    <span>{room.teacher?.username || 'Classroom'}</span>
+                  </div>
+                  <div className="classroom-card-body">
+                    <p>{room.description || 'Open this class to see updates and assignments.'}</p>
+                    <div className="classroom-card-footer">
+                      <span>{room.students?.length || 0} students</span>
+                      <span aria-hidden="true">Open class&nbsp;→</span>
                     </div>
-                    <small>{room.teacher?.username || 'Teacher'}</small>
-                    <p>{room.description || 'No description yet.'}</p>
-                  </Link>
-                ))
-              )}
+                  </div>
+                </Link>
+              ))}
             </div>
           )}
-        </aside>
-
-        <section className="panel classroom-main">
-          {!selectedClassroom ? (
-            <div className="empty-state large">Select a classroom to view its overview.</div>
-          ) : (
-            <>
-              <div className="classroom-header">
-                <div>
-                  <span className="eyebrow">Selected room</span>
-                  <h2>{selectedClassroom.name}</h2>
-                  <p>{selectedClassroom.description || 'Classroom description coming soon.'}</p>
+        </>
+      ) : (
+        <>
+          {renderClassroomHeader('stream')}
+          <div className="classroom-stream-layout">
+            <main className="classroom-stream">
+              <section className="classroom-panel classroom-post-prompt">
+                <span className="classroom-avatar" aria-hidden="true">
+                  {(user.username || 'U').slice(0, 1).toUpperCase()}
+                </span>
+                <Link to={`/classrooms/${selectedClassroom.id}/messages`}>
+                  Share something with your class…
+                </Link>
+              </section>
+              <section className="classroom-panel">
+                <div className="classroom-section-heading">
+                  <h2>Recent updates</h2>
+                  <Link to={`/classrooms/${selectedClassroom.id}/messages`}>View all</Link>
                 </div>
-                {!isTeacher && (
-                  <button className="btn line danger" onClick={handleLeaveClassroom}>Leave classroom</button>
+                {messages.length === 0 ? (
+                  <div className="empty-state">Your class updates will appear here.</div>
+                ) : (
+                  <div className="classroom-updates">
+                    {messages.slice(-3).reverse().map((message) => (
+                      <article className="classroom-update" key={message.id}>
+                        <span className="classroom-avatar" aria-hidden="true">
+                          {(message.sender?.username || 'U').slice(0, 1).toUpperCase()}
+                        </span>
+                        <div>
+                          <strong>{message.sender?.username || 'User'}</strong>
+                          <small>{new Date(message.created_at).toLocaleString()}</small>
+                          <p>{message.message}</p>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
                 )}
-              </div>
-
-              <div className="stats-grid">
-                <div className="mini-stat">
-                  <span>Teacher</span>
+              </section>
+              <section className="classroom-panel">
+                <div className="classroom-section-heading">
+                  <h2>Classwork</h2>
+                  <Link to={`/classrooms/${selectedClassroom.id}/tasks`}>View all</Link>
+                </div>
+                {tasks.length === 0 ? (
+                  <div className="empty-state">No assignments have been posted yet.</div>
+                ) : (
+                  <div className="classroom-updates">
+                    {tasks.slice(0, 3).map((task) => (
+                      <article className="classroom-assignment" key={task.id}>
+                        <span className="classroom-assignment-icon" aria-hidden="true">✓</span>
+                        <div>
+                          <strong>{task.title}</strong>
+                          <small>{task.due_date ? `Due ${new Date(task.due_date).toLocaleDateString()}` : 'No due date'}</small>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </main>
+            <aside className="classroom-sidebar-cards">
+              <section className="classroom-panel">
+                <div className="classroom-section-heading">
+                  <h2>Class code</h2>
+                </div>
+                <p className="classroom-code">{selectedClassroom.join_code}</p>
+              </section>
+              <section className="classroom-panel" id="people">
+                <div className="classroom-section-heading">
+                  <h2>Teachers</h2>
+                </div>
+                <div className="classroom-person">
+                  <span className="classroom-avatar" aria-hidden="true">
+                    {(selectedClassroom.teacher?.username || 'T').slice(0, 1).toUpperCase()}
+                  </span>
                   <strong>{selectedClassroom.teacher?.username || 'Teacher'}</strong>
                 </div>
-                <div className="mini-stat">
-                  <span>Students</span>
-                  <strong>{selectedClassroom.students?.length || 0}</strong>
+                <div className="classroom-section-heading classroom-people-heading">
+                  <h2>Classmates</h2>
+                  <span>{selectedClassroom.students?.length || 0}</span>
                 </div>
-                <div className="mini-stat">
-                  <span>Join code</span>
-                  <strong>{selectedClassroom.join_code}</strong>
-                </div>
-                <div className="mini-stat">
-                  <span>Tasks</span>
-                  <strong>{tasks.length}</strong>
-                </div>
-              </div>
-
-              <div className="button-row">
-                <Link to={`/classrooms/${selectedClassroom.id}/messages`} className="btn line">Messages</Link>
-                <Link to={`/classrooms/${selectedClassroom.id}/tasks`} className="btn line">Assignments</Link>
-              </div>
-
-              <div className="content-panel">
-                <div className="section-header">
-                  <h3>Students</h3>
-                </div>
-                <div className="student-list">
-                  {(selectedClassroom.students || []).map((student) => (
-                    <div className="student-row" key={student.id}>
-                      <div>
-                        <strong>{student.first_name || student.username}</strong>
-                        <small>@{student.username}</small>
-                      </div>
-                    </div>
-                  ))}
-                  {(!selectedClassroom.students || selectedClassroom.students.length === 0) && (
-                    <div className="empty-state small">No students in this classroom yet.</div>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </section>
-      </div>
+                {(selectedClassroom.students || []).slice(0, 5).map((student) => (
+                  <div className="classroom-person" key={student.id}>
+                    <span className="classroom-avatar" aria-hidden="true">
+                      {(student.first_name || student.username).slice(0, 1).toUpperCase()}
+                    </span>
+                    <strong>{student.first_name || student.username}</strong>
+                  </div>
+                ))}
+                {(!selectedClassroom.students || selectedClassroom.students.length === 0) && (
+                  <p className="classroom-muted">No classmates yet.</p>
+                )}
+              </section>
+              {!isTeacher && (
+                <button className="btn line danger classroom-leave-button" onClick={handleLeaveClassroom}>
+                  Leave class
+                </button>
+              )}
+            </aside>
+          </div>
+        </>
+      )}
     </div>
   )
 
@@ -388,16 +447,10 @@ export function ClassroomsPage({ initialTab = 'overview' }: ClassroomsPageProps)
 
     return (
       <div className="wrap classroom-page">
-        <section className="panel classroom-main">
-          <div className="classroom-header">
-            <div>
-              <span className="eyebrow">Assignments</span>
-              <h2>{selectedClassroom.name}</h2>
-            </div>
-            <div className="button-row">
-              <Link to={`/classrooms/${selectedClassroom.id}`} className="btn ghost">Overview</Link>
-              <Link to={`/classrooms/${selectedClassroom.id}/messages`} className="btn line">Messages</Link>
-            </div>
+        {renderClassroomHeader('classwork')}
+        <section className="classroom-panel classroom-work-panel">
+          <div className="classroom-section-heading">
+            <h2>Classwork</h2>
           </div>
 
           {isTeacher && (
@@ -455,16 +508,10 @@ export function ClassroomsPage({ initialTab = 'overview' }: ClassroomsPageProps)
 
     return (
       <div className="wrap classroom-page">
-        <section className="panel classroom-main">
-          <div className="classroom-header">
-            <div>
-              <span className="eyebrow">Messages</span>
-              <h2>{selectedClassroom.name}</h2>
-            </div>
-            <div className="button-row">
-              <Link to={`/classrooms/${selectedClassroom.id}`} className="btn ghost">Overview</Link>
-              <Link to={`/classrooms/${selectedClassroom.id}/tasks`} className="btn line">Assignments</Link>
-            </div>
+        {renderClassroomHeader('stream')}
+        <section className="classroom-panel classroom-messages-panel">
+          <div className="classroom-section-heading">
+            <h2>Class updates</h2>
           </div>
 
           <div className="message-list">
